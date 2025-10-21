@@ -1,46 +1,234 @@
 <!doctype html>
 <html lang="de">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kontakt & Termin</title>
-<link href="styles.css" rel="stylesheet">
-<div class="container">
-  <div class="card">
-    <h1>Kontakt</h1>
-    <p>Schreiben Sie uns. Wir melden uns zeitnah.</p>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Termin buchen</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --brand:#2ec4b6; --brand-600:#26a79b; --bg:#0b0c0f; --card:#15181c; --text:#e8edf2; --muted:#9aa3ad; --danger:#ff6b6b; }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,Segoe UI,Arial}
+  .wrap{max-width:980px;margin:40px auto;padding:0 16px}
+  h1{font-size:28px;margin:0 0 8px} p.lead{color:var(--muted);margin:0 0 24px}
 
-    <ul class="contact-list">
-      <li><div class="contact-label">E-Mail</div><div class="contact-value"><a href="mailto:y.meynioglu@mlaw.lu">y.meynioglu@mlaw.lu</a></div></li>
-      <li><div class="contact-label">Telefon</div><div class="contact-value"><a href="tel:+35228480045">(+352) 28 48 00 45</a></div></li>
-      <li><div class="contact-label">Adresse</div><div class="contact-value">6, Avenue Guillaume, L-1650 Luxembourg</div></li>
-    </ul>
+  .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .actions{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px}
+  button.primary{background:var(--brand);border:none;color:#0b0c0f;font-weight:600;padding:10px 14px;border-radius:10px;cursor:pointer}
+  button.primary:hover{background:var(--brand-600)}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer}
+  .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}
+  .day{display:flex;flex-direction:column;gap:10px}
+  .day .head{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .dow{color:var(--muted);font-size:12px}
+  .dnum{font-weight:600}
+  .slots{display:flex;flex-direction:column;gap:10px}
+  .slot{border:none;border-radius:14px;padding:10px 0;cursor:pointer;background:var(--brand);color:#0b0c0f;font-weight:600;box-shadow:0 6px 14px rgba(46,196,182,.25)}
+  .slot:hover{background:var(--brand-600)}
+  .slot.selected{outline:2px solid #fff}
+  .slot.unavailable{background:transparent;border:1px dashed rgba(255,255,255,.2);color:var(--muted);text-decoration:line-through;cursor:not-allowed;box-shadow:none}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:14px 0;border:1px dashed rgba(255,255,255,.12);border-radius:12px}
 
-    <div style="margin-top:16px">
-      <button id="rdv-btn" class="btn">Nehmen Sie sich ein RDV</button>
-    </div>
+  .form{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .form .full{grid-column:1/-1}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text)}
+  .row-end{display:flex;gap:12px;justify-content:flex-end;margin-top:6px}
+  .hint{color:var(--muted);font-size:13px;margin-top:6px}
+  .ok{color:#3ddc97}.err{color:var(--danger)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Kontakt • Termin buchen</h1>
+    <p class="lead">Wählen Sie einen freien Termin und geben Sie Ihre Daten ein.</p>
 
-    <div id="rdv-panel" class="hidden" style="margin-top:18px">
-      <h2>Verfügbare Termine</h2>
-      <table id="slots">
-        <thead><tr><th>Termin</th><th>Status</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table>
+    <div class="card">
+      <div class="actions">
+        <button id="toggle" class="primary">Terminübersicht öffnen</button>
+        <div class="hint">Belegte Zeiten sind durchgestrichen.</div>
+      </div>
 
-      <div id="confirm" class="hidden" style="margin-top:18px">
-        <div class="grid grid-2">
+      <div id="calendar" style="display:none">
+        <div class="grid" id="weekGrid" aria-live="polite"></div>
+
+        <form id="bookForm" class="form" autocomplete="on" novalidate>
           <div>
-            <div class="contact-label">Gewählter Termin</div>
-            <div id="chosen" class="contact-value"></div>
+            <label for="first">Vorname</label>
+            <input id="first" name="first" required />
           </div>
-          <form id="rdv-form" class="grid" style="align-content:start">
-            <input id="email" type="email" placeholder="Ihre E-Mail" required>
-            <button class="btn" type="submit">Termin bestätigen</button>
-          </form>
-        </div>
-        <div id="alert" style="margin-top:10px"></div>
+          <div>
+            <label for="last">Nachname</label>
+            <input id="last" name="last" required />
+          </div>
+          <div>
+            <label for="email">E-Mail</label>
+            <input id="email" name="email" type="email" required />
+          </div>
+          <div class="full">
+            <div class="row-end">
+              <button type="button" class="ghost" id="nextWeek">Mehr…</button>
+              <button type="submit" class="primary">Termin bestätigen</button>
+            </div>
+            <div id="msg" class="hint"></div>
+          </div>
+        </form>
       </div>
     </div>
   </div>
-</div>
-<script src="app.js"></script>
+
+<script>
+(() => {
+  // Einstellungen
+  const SLOT_MINUTES = 30;
+  const DAY_START = "14:00";     // earliest
+  const DAY_END   = "18:00";     // latest (exklusiv)
+  const LOCALE = "de-DE";
+
+  // Beispiel: bereits belegte Slots (ISO string "YYYY-MM-DDTHH:mm")
+  const booked = new Set([
+    // z.B. "2025-03-12T16:00"
+  ]);
+
+  // State
+  let weekOffset = 0; // 0 = aktuelle Woche
+  let selectedIso = null;
+
+  // DOM
+  const grid = document.getElementById("weekGrid");
+  const cal  = document.getElementById("calendar");
+  const msg  = document.getElementById("msg");
+  const toggle = document.getElementById("toggle");
+  const nextWeek = document.getElementById("nextWeek");
+  const form = document.getElementById("bookForm");
+
+  toggle.addEventListener("click", () => {
+    const vis = cal.style.display !== "none";
+    cal.style.display = vis ? "none" : "block";
+    toggle.textContent = vis ? "Terminübersicht öffnen" : "Terminübersicht schließen";
+  });
+
+  nextWeek.addEventListener("click", () => {
+    weekOffset += 1;
+    renderWeek();
+  });
+
+  function rangeTimes(start, end, stepMin) {
+    const out = [];
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    const startM = sh*60+sm, endM = eh*60+em;
+    for (let m = startM; m < endM; m += stepMin) {
+      const h = String(Math.floor(m/60)).padStart(2,"0");
+      const mm = String(m%60).padStart(2,"0");
+      out.push(`${h}:${mm}`);
+    }
+    return out;
+  }
+
+  function startOfWeek(d) {
+    const date = new Date(d);
+    const day = (date.getDay() + 6) % 7; // Montag=0
+    date.setDate(date.getDate() - day);
+    date.setHours(0,0,0,0);
+    return date;
+  }
+
+  function addDays(d, n) {
+    const x = new Date(d);
+    x.setDate(x.getDate()+n);
+    return x;
+  }
+
+  function isoFor(date, hm) {
+    const [h,m] = hm.split(":").map(Number);
+    const x = new Date(date);
+    x.setHours(h,m,0,0);
+    // ISO ohne Sekunden
+    return x.toISOString().slice(0,16);
+  }
+
+  function renderWeek() {
+    grid.innerHTML = "";
+    selectedIso = null;
+    msg.textContent = "";
+
+    const base = startOfWeek(new Date());
+    const weekStart = addDays(base, weekOffset*7);
+    const times = rangeTimes(DAY_START, DAY_END, SLOT_MINUTES);
+    const now = new Date();
+
+    for (let i=0;i<7;i++) {
+      const day = addDays(weekStart, i);
+      const dnum = day.toLocaleDateString(LOCALE,{day:"2-digit"});
+      const dow  = day.toLocaleDateString(LOCALE,{weekday:"short"});
+
+      const col = document.createElement("div");
+      col.className = "day";
+      col.innerHTML = `<div class="head"><div class="dnum">${dnum}</div><div class="dow">${dow}</div></div>`;
+
+      const list = document.createElement("div");
+      list.className = "slots";
+
+      let any = false;
+      for (const t of times) {
+        const iso = isoFor(day, t);
+        const when = new Date(iso);
+        const inPast = when < now;
+        const isBooked = booked.has(iso);
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = t;
+        btn.className = "slot";
+        btn.disabled = inPast || isBooked;
+        if (inPast || isBooked) btn.classList.add("unavailable");
+
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
+          btn.classList.add("selected");
+          selectedIso = iso;
+          msg.innerHTML = `Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE, { weekday:"short", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" })}</span>`;
+        });
+
+        list.appendChild(btn);
+        any = true;
+      }
+
+      if (!any) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "Keine Zeiten";
+        list.appendChild(empty);
+      }
+
+      col.appendChild(list);
+      grid.appendChild(col);
+    }
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "";
+    const first = form.first.value.trim();
+    const last  = form.last.value.trim();
+    const email = form.email.value.trim();
+    if (!selectedIso)   { msg.innerHTML = '<span class="err">Bitte einen Termin wählen.</span>'; return; }
+    if (!first || !last){ msg.innerHTML = '<span class="err">Vor- und Nachname angeben.</span>'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.innerHTML = '<span class="err">E-Mail ist ungültig.</span>'; return; }
+
+    // Hier würdest du an deinen Server posten:
+    // await fetch('/api/book', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({first,last,email,slot:selectedIso})})
+
+    // Demo: lokal „blockieren“
+    booked.add(selectedIso);
+    renderWeek();
+    msg.innerHTML = '<span class="ok">Termin vorgemerkt. Bestätigung wird per E-Mail gesendet.</span>';
+    form.reset();
+  });
+
+  // Init
+  renderWeek();
+})();
+</script>
+</body>
 </html>
