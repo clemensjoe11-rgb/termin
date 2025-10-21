@@ -1,0 +1,20 @@
+:root{ --bg:#0b0c0f; --text:#e7eaee; --card:#14171b; --muted:#a0a8b0; --brand:#8d6041 }
+html,body{height:100%}
+body{margin:0;font-family:Inter,system-ui;background:var(--bg);color:var(--text)}
+.container{max-width:960px;margin:0 auto;padding:24px}
+.card{background:var(--card);border:1px solid #22252c;border-radius:18px;box-shadow:0 18px 40px rgba(0,0,0,.35);padding:24px}
+.btn{background:var(--brand);color:#fff;border:none;border-radius:12px;padding:10px 14px;cursor:pointer}
+.btn:disabled{opacity:.6}
+.grid{display:grid;gap:12px}
+.grid-2{grid-template-columns:1fr 1fr}
+.hidden{display:none}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:10px;border-top:1px solid #2a2e36}
+.badge{display:inline-block;padding:2px 8px;border:1px solid #2a2e36;border-radius:999px;font-size:.85rem}
+.badge.green{background:#12381e;color:#b7ffcc;border-color:#1e6b36}
+.contact-list{list-style:none;padding:0;margin:0}
+.contact-list li{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.contact-label{color:var(--muted);font-size:.9rem}
+.contact-value{font-weight:600}
+.success{color:#7bffb0}
+.error{color:#ff9c9c}

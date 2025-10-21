@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kontakt & Termin</title>
+<link href="styles.css" rel="stylesheet">
+<div class="container">
+  <div class="card">
+    <h1>Kontakt</h1>
+    <p>Schreiben Sie uns. Wir melden uns zeitnah.</p>
+
+    <ul class="contact-list">
+      <li><div class="contact-label">E-Mail</div><div class="contact-value"><a href="mailto:y.meynioglu@mlaw.lu">y.meynioglu@mlaw.lu</a></div></li>
+      <li><div class="contact-label">Telefon</div><div class="contact-value"><a href="tel:+35228480045">(+352) 28 48 00 45</a></div></li>
+      <li><div class="contact-label">Adresse</div><div class="contact-value">6, Avenue Guillaume, L-1650 Luxembourg</div></li>
+    </ul>
+
+    <div style="margin-top:16px">
+      <button id="rdv-btn" class="btn">Nehmen Sie sich ein RDV</button>
+    </div>
+
+    <div id="rdv-panel" class="hidden" style="margin-top:18px">
+      <h2>Verfügbare Termine</h2>
+      <table id="slots">
+        <thead><tr><th>Termin</th><th>Status</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <div id="confirm" class="hidden" style="margin-top:18px">
+        <div class="grid grid-2">
+          <div>
+            <div class="contact-label">Gewählter Termin</div>
+            <div id="chosen" class="contact-value"></div>
+          </div>
+          <form id="rdv-form" class="grid" style="align-content:start">
+            <input id="email" type="email" placeholder="Ihre E-Mail" required>
+            <button class="btn" type="submit">Termin bestätigen</button>
+          </form>
+        </div>
+        <div id="alert" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
+</html>
