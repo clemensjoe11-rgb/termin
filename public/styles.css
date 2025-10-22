@@ -18,3 +18,10 @@ th,td{padding:10px;border-top:1px solid #2a2e36}
 .contact-value{font-weight:600}
 .success{color:#7bffb0}
 .error{color:#ff9c9c}
+
+#calendar{display:flex;gap:1rem;overflow-x:auto;padding:.5rem}
+.day{display:flex;flex-direction:column;min-width:11rem}
+.day-head{font-weight:700;margin:.25rem 0}
+.slot{padding:.55rem 1rem;border-radius:.9rem;margin:.28rem 0;border:0}
+.slot.free{background:#27c6ad;color:#0b0c0f}
+.slot.past{background:#23272b;color:#9aa0a6;opacity:.5;text-decoration:line-through;cursor:not-allowed}
