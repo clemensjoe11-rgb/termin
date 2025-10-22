@@ -7,20 +7,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--brand:#2ec4b6;--brand-600:#26a79b;--bg:#0b0c0f;--card:#15181c;--text:#e8edf2;--muted:#9aa3ad;--danger:#ff5c5c}
-*{box-sizing:border-box} html,body{height:100%}
+*{box-sizing:border-box}
+html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,Segoe UI,Arial;display:grid;place-items:start center;min-height:100svh}
 .wrap{width:min(1100px,100%);padding:24px}
 
-/* Kopfzeile: Toggle links, Nav mittig, Spacer rechts -> echte Zentrierung */
-.header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-bottom:12px}
+/* Header */
+.header{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;margin-bottom:12px}
+.nav-core{place-self:center;display:flex;align-items:center;gap:12px}
 .btn{border-radius:12px;padding:8px 12px;cursor:pointer;font-weight:600;border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--text)}
 .btn.icon{width:40px;height:40px;display:grid;place-items:center;font-size:18px;border-radius:10px}
-.nav{justify-self:center;display:flex;align-items:center;gap:12px}
-.nav .icon{width:44px;height:44px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.18);border-radius:12px;background:transparent;color:var(--text);cursor:pointer}
-.datepick{appearance:none;background:#0f1215;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:8px 10px;border-radius:12px;font:inherit;height:44px;min-width:210px}
-.spacer{justify-self:end}
-
-/* Karte + Uhr */
+.datepick{appearance:none;background:#0f1215;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:8px 10px;border-radius:10px;font:inherit}
+.controls{justify-self:end}
 .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
 .clock{color:var(--muted);text-align:center;margin-bottom:12px;font-variant-numeric:tabular-nums}
 
@@ -37,17 +35,20 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-
 .today .dnum{background:rgba(255,255,255,.1);padding:3px 10px;border-radius:999px}
 .slots{display:grid;grid-auto-rows:44px;gap:10px;position:relative}
 .slot{height:44px;display:grid;place-items:center;border-radius:14px;border:1px dashed transparent;background:var(--brand);color:#0b0c0f;font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer}
-.slot:hover{background:var(--brand-600)} .slot.selected{outline:2px solid #fff}
+.slot:hover{background:var(--brand-600)}
+.slot.selected{outline:2px solid #fff}
 .slot.unavailable{background:transparent;border-color:rgba(255,255,255,.2);color:var(--muted);text-decoration:line-through;cursor:not-allowed}
 .now-line{position:absolute;left:0;right:0;height:2px;background:var(--danger);box-shadow:0 0 0 2px rgba(255,92,92,.15)}
 .now-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--danger);left:-6px;transform:translateY(-4px)}
 
 /* Formular */
 .form{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.form .full{grid-column:1/-1} label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+.form .full{grid-column:1/-1}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
 input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text)}
 .row-end{display:flex;gap:12px;justify-content:flex-end;margin-top:6px}
-.btn.primary{background:var(--brand);border:none;color:#0b0c0f}.btn.primary:hover{background:var(--brand-600)}
+.btn.primary{background:var(--brand);border:none;color:#0b0c0f}
+.btn.primary:hover{background:var(--brand-600)}
 .hint{color:var(--muted);font-size:13px}.ok{color:#3ddc97}.err{color:#ff6b6b}
 
 /* Mobile 2-Stufen-Flow */
@@ -55,8 +56,6 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
 @media (max-width:720px){
   .grid{display:none}
   .mobile{display:grid;gap:12px}
-  .nav .icon{width:40px;height:40px}
-  .datepick{height:40px;min-width:170px}
   .date-strip{display:grid;grid-auto-flow:column;grid-auto-columns:min(22vw,92px);gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:4px 2px}
   .date-btn{scroll-snap-align:center;display:grid;gap:4px;justify-items:center;padding:10px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text);cursor:pointer}
   .date-btn .dn{font-weight:600}.date-btn .dw{font-size:12px;color:var(--muted)}
@@ -64,25 +63,31 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
   .mobile-slots{display:grid;grid-auto-rows:44px;gap:8px;position:relative}
   .slot{height:44px;border-radius:12px}
 }
-@media (max-width:480px){
-  .datepick{min-width:150px}
-}
+
+/* fein */
+@media (max-width:900px){.slot{height:42px;font-size:14px}.slots{gap:8px;grid-auto-rows:42px}}
+@media (max-width:480px){.datepick{padding:6px 8px}}
+
+/* Hide all calendar UI when collapsed */
+.calendar-hidden .nav-core,
+.calendar-hidden #clock,
+.calendar-hidden #calWrap,
+.calendar-hidden .mobile { display:none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
-
-  <!-- Header: Toggle links, Navigation mittig, Spacer rechts -->
   <div class="header">
-    <button id="toggleCal" class="btn" aria-expanded="true">Kalender verbergen</button>
-
-    <div class="nav" id="nav">
-      <button id="prevWeek" class="icon" aria-label="Vorherige Woche">◀</button>
-      <input id="pickDate" class="datepick" type="date" aria-label="Datum auswählen">
-      <button id="nextWeek" class="icon" aria-label="Nächste Woche">▶</button>
+    <!-- zentrierte Navigation -->
+    <div class="nav-core" id="navCore">
+      <button id="prev" class="btn icon" aria-label="Vorherige Woche">◀</button>
+      <input id="jumpDate" class="datepick" type="date" aria-label="Datum auswählen">
+      <button id="next" class="btn icon" aria-label="Nächste Woche">▶</button>
     </div>
-
-    <div class="spacer" aria-hidden="true"></div>
+    <!-- nur Toggle rechts -->
+    <div class="controls">
+      <button id="toggle" class="btn" aria-expanded="true">Kalender verbergen</button>
+    </div>
   </div>
 
   <div class="card">
@@ -122,13 +127,13 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
   const mStrip=document.getElementById("dateStrip");
   const mSlots=document.getElementById("mSlots");
   const clock=document.getElementById("clock");
-  const prevBtn=document.getElementById("prevWeek");
-  const nextBtn=document.getElementById("nextWeek");
-  const toggleBtn=document.getElementById("toggleCal");
+  const prev=document.getElementById("prev");
+  const next=document.getElementById("next");
+  const toggle=document.getElementById("toggle");
   const calWrap=document.getElementById("calWrap");
   const form=document.getElementById("form");
   const msg=document.getElementById("msg");
-  const pickDate=document.getElementById("pickDate");
+  const jumpDate=document.getElementById("jumpDate");
 
   const toMin=s=>{const[a,b]=s.split(":").map(Number);return a*60+b;}
   const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
@@ -136,30 +141,33 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
   const times=(a,b,step)=>{const out=[];for(let m=toMin(a);m<toMin(b);m+=step){out.push(`${String(m/60|0).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`)}return out;}
   const tsFor=(date,hm)=>{const[h,m]=hm.split(":").map(Number);const x=new Date(date);x.setHours(h,m,0,0);return x.getTime()}
 
-  // Navigation
-  toggleBtn.onclick=()=>{const open=calWrap.classList.toggle("open");toggleBtn.setAttribute("aria-expanded",open);toggleBtn.textContent=open?"Kalender verbergen":"Kalender anzeigen";}
-  prevBtn.onclick =()=>{weekOffset--; renderAll(); syncPicker();}
-  nextBtn.onclick =()=>{weekOffset++; renderAll(); syncPicker();}
-  pickDate.onchange=()=>{ if(!pickDate.value) return; goToDate(new Date(pickDate.value)); };
+  // Controls
+  prev.onclick =()=>{weekOffset--; renderAll()}
+  next.onclick =()=>{weekOffset++; renderAll()}
+  toggle.onclick=()=>{
+    const isHidden = document.body.classList.toggle('calendar-hidden');
+    // für A11y
+    toggle.setAttribute('aria-expanded', String(!isHidden));
+    // Collapsible mitführen
+    calWrap.classList.toggle('open', !isHidden);
+  }
+  jumpDate.value = new Date().toISOString().slice(0,10);
+  jumpDate.onchange=()=>{ if(!jumpDate.value) return; setWeekByDate(new Date(jumpDate.value)); }
 
-  function goToDate(date){
+  function setWeekByDate(date){
     const base=startOfWeek(new Date());
     const target=startOfWeek(date);
     const diffDays=Math.round((target-base)/86400000);
-    weekOffset=Math.trunc(diffDays/7);
-    mobileDayTs=date.setHours(0,0,0,0);
+    weekOffset = Math.trunc(diffDays/7);
+    mobileDayTs = date.setHours(0,0,0,0);
     renderAll();
-  }
-  function syncPicker(){
-    const base=startOfWeek(new Date());
-    const weekStart=addDays(base,weekOffset*7);
-    pickDate.valueAsDate=weekStart;
+    focusTodayMobile(date);
   }
 
   // Clock
   function tick(){clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
 
-  // Desktop
+  // Desktop render
   function renderDesktop(){
     grid.innerHTML="";
     const now=Date.now(), base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
@@ -186,7 +194,7 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
     }
   }
 
-  // Mobile
+  // Mobile render
   function renderMobile(){
     mStrip.innerHTML=""; mSlots.innerHTML="";
     const base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
@@ -248,8 +256,7 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
   });
 
   // Init
-  pickDate.value = new Date().toISOString().slice(0,10);
-  tick(); renderAll();
+  renderAll(); tick();
   setInterval(()=>{tick(); renderAll()}, 30000);
   addEventListener("resize", renderAll);
 })();
