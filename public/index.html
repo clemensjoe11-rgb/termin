@@ -62,17 +62,7 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rg
 .inline{display:grid;grid-template-columns:140px 1fr;gap:10px}
 
 .terms{font-size:13px;color:var(--muted);line-height:1.45}
-.terms label{
-  display:flex;
-  align-items:flex-start;      /* Checkbox neben Text */
-  gap:10px;
-  margin:0;                   /* kein zusätzlicher Abstand */
-}
-.terms input[type="checkbox"]{
-  margin:0;
-  flex:0 0 auto;
-  transform:translateY(1px);
-}
+
 .terms small{display:block;margin-top:6px}
 
 .hint{color:var(--muted);font-size:13px;margin-top:6px}
@@ -117,14 +107,21 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rg
 .confirm-bar .btn{width:100%; height:48px; font-weight:700; border-radius:12px}
 .calendar-hidden .confirm-bar{display:none!important}
 
-  /* Checkbox rechts neben dem Satz */
-.terms label{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-direction:row-reverse;   /* Text links, Checkbox rechts */
-  justify-content:flex-end;
-  margin:0;
+
+
+  .terms{display:grid;gap:10px}
+.terms .summary{
+  margin:0; font-size:13px; line-height:1.55; color:var(--muted);
+}
+.terms .accept{
+  margin:0; display:flex; align-items:center; justify-content:flex-end; gap:10px;
+  font-weight:600;
+}
+.terms .accept input{inline-size:18px; block-size:18px; margin:0}
+
+/* Mobile: Checkbox + Text linksbündig */
+@media (max-width:720px){
+  .terms .accept{justify-content:flex-start}
 }
 </style>
 </head>
@@ -193,10 +190,18 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rg
             <input id="phone" name="phone" type="tel" inputmode="tel" placeholder="628 123 456" required>
           </div>
         </div>
-        <div class="full terms">
-          <label><input id="terms" type="checkbox" required> Ich akzeptiere die Bedingungen.</label>
-          <small>Kurzfassung: Der Termin kann vom Anbieter aus organisatorischen Gründen verschoben oder storniert werden. Sie werden per E-Mail oder SMS informiert. Mit dem Absenden stimmen Sie der Kontaktaufnahme zu.</small>
-        </div>
+       <div class="full terms">
+  <p class="summary">
+    Kurzfassung: Der Termin kann vom Anbieter aus organisatorischen Gründen
+    verschoben oder storniert werden. Sie werden per E-Mail oder SMS informiert.
+    Mit dem Absenden stimmen Sie der Kontaktaufnahme zu.
+  </p>
+
+  <label class="accept">
+    Ich akzeptiere die Bedingungen.
+    <input id="terms" type="checkbox" required>
+  </label>
+</div>
         <div id="msg" class="full hint" role="status" aria-live="polite"></div>
       </form>
     </div>
