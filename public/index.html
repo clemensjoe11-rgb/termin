@@ -7,13 +7,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root { --brand:#2ec4b6; --brand-600:#26a79b; --bg:#0b0c0f; --card:#15181c; --text:#e8edf2; --muted:#9aa3ad; --danger:#ff5c5c; }
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,Segoe UI,Arial}
-  .wrap{max-width:980px;margin:32px auto;padding:0 16px}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-  h1{font-size:22px;margin:0}
-  .clock{font-variant-numeric:tabular-nums;color:var(--muted)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,Segoe UI,Arial;display:grid;place-items:start center;min-height:100svh}
+  .wrap{width:min(1100px,100%);padding:24px}
+  .header-bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:12px}
+  .header-bar h1{justify-self:start;font-size:22px;margin:0}
+  .month{justify-self:center;color:var(--muted);font-weight:600}
+  .controls{justify-self:end;display:flex;gap:8px}
   .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
-  .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}
+  .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px;justify-items:stretch}
   .day{display:flex;flex-direction:column;gap:10px}
   .head{display:flex;flex-direction:column;align-items:center;gap:2px}
   .dow{color:var(--muted);font-size:12px}
@@ -36,16 +38,22 @@
   button.ghost{background:transparent;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer}
   .hint{color:var(--muted);font-size:13px;margin-top:6px}
   .ok{color:#3ddc97}.err{color:#ff6b6b}
+  .clock{font-variant-numeric:tabular-nums;color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
+  <div class="header-bar">
     <h1>Termine</h1>
-    <div class="clock" id="liveClock">—:—</div>
-  </header>
+    <div class="month" id="monthLabel">—</div>
+    <div class="controls">
+      <button type="button" class="ghost" id="prevWeek">Zurück</button>
+      <button type="button" class="ghost" id="nextWeek">Weiter</button>
+    </div>
+  </div>
 
   <div class="card">
+    <div class="clock" id="liveClock" style="text-align:center;margin-bottom:10px">—:—</div>
     <div class="grid" id="weekGrid" aria-live="polite"></div>
 
     <form id="bookForm" class="form" autocomplete="on" novalidate>
@@ -63,8 +71,6 @@
       </div>
       <div class="full">
         <div class="row-end">
-          <button type="button" class="ghost" id="prevWeek">Zurück</button>
-          <button type="button" class="ghost" id="nextWeek">Mehr…</button>
           <button type="submit" class="primary">Bestätigen</button>
         </div>
         <div id="msg" class="hint"></div>
@@ -75,26 +81,22 @@
 
 <script>
 (() => {
-  // Konfiguration
   const SLOT_MINUTES = 30;
   const DAY_START = "08:00";
   const DAY_END   = "17:00";
   const LOCALE = "de-DE";
 
-  // gebuchte Slots als Zeitstempel (ms)
   const booked = new Set(); // Set<number>
-
-  // State
   let weekOffset = 0;
-  let selectedTs = null; // number
+  let selectedTs = null;
 
-  // DOM
-  const grid = document.getElementById("weekGrid");
+  const grid  = document.getElementById("weekGrid");
   const clock = document.getElementById("liveClock");
   const prevBtn = document.getElementById("prevWeek");
   const nextBtn = document.getElementById("nextWeek");
   const form = document.getElementById("bookForm");
   const msg  = document.getElementById("msg");
+  const monthLabel = document.getElementById("monthLabel");
 
   prevBtn.onclick = () => { weekOffset -= 1; renderWeek(); };
   nextBtn.onclick = () => { weekOffset += 1; renderWeek(); };
@@ -102,6 +104,13 @@
   function tickClock(){
     const n = new Date();
     clock.textContent = n.toLocaleString(LOCALE,{weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+  }
+
+  function monthText(weekStart){
+    const end = addDays(weekStart, 6);
+    const sameMonth = weekStart.getMonth() === end.getMonth() && weekStart.getFullYear() === end.getFullYear();
+    if (sameMonth) return weekStart.toLocaleDateString(LOCALE,{month:'long', year:'numeric'});
+    return `${weekStart.toLocaleDateString(LOCALE,{month:'long'})} / ${end.toLocaleDateString(LOCALE,{month:'long', year:'numeric'})}`;
   }
 
   function rangeTimes(start, end, stepMin) {
@@ -116,32 +125,21 @@
     }
     return out;
   }
-  function startOfWeek(d) {
-    const date = new Date(d);
-    const day = (date.getDay()+6)%7; // Mo=0
-    date.setDate(date.getDate()-day);
-    date.setHours(0,0,0,0);
-    return date;
-  }
-  function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+  function startOfWeek(d){ const x=new Date(d); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); x.setHours(0,0,0,0); return x; }
+  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  function tsFor(date, hm){ const [h,m]=hm.split(':').map(Number); const x=new Date(date); x.setHours(h,m,0,0); return x.getTime(); }
+  function toMin(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
 
-  // lokale Zeit -> ms-Zeitstempel
-  function tsFor(date, hm){
-    const [h,m] = hm.split(':').map(Number);
-    const x = new Date(date);
-    x.setHours(h, m, 0, 0);
-    return x.getTime();
-  }
-
-  function renderWeek() {
+  function renderWeek(){
     grid.innerHTML = "";
     const now = Date.now();
     const base = startOfWeek(new Date());
     const weekStart = addDays(base, weekOffset*7);
+    monthLabel.textContent = monthText(weekStart);
     const times = rangeTimes(DAY_START, DAY_END, SLOT_MINUTES);
 
-    for (let i=0;i<7;i++) {
-      const day = addDays(weekStart, i);
+    for(let i=0;i<7;i++){
+      const day = addDays(weekStart,i);
       const isToday = day.toDateString() === new Date().toDateString();
 
       const col = document.createElement("div");
@@ -158,8 +156,8 @@
       list.className = "slots";
       col.appendChild(list);
 
-      for (const t of times) {
-        const ts = tsFor(day, t);      // number
+      for(const t of times){
+        const ts = tsFor(day,t);
         const when = new Date(ts);
         const inPast = ts < now;
         const isBooked = booked.has(ts);
@@ -168,10 +166,7 @@
         btn.type = "button";
         btn.textContent = t;
         btn.className = "slot";
-        if (inPast || isBooked) {
-          btn.disabled = true;
-          btn.classList.add("unavailable");
-        }
+        if(inPast || isBooked){ btn.disabled = true; btn.classList.add("unavailable"); }
         btn.onclick = () => {
           document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
           btn.classList.add("selected");
@@ -181,7 +176,7 @@
         list.appendChild(btn);
       }
 
-      if (isToday) requestAnimationFrame(() => positionNowLine(list));
+      if(isToday) requestAnimationFrame(()=>positionNowLine(list));
       grid.appendChild(col);
     }
   }
@@ -191,39 +186,34 @@
     const endM   = toMin(DAY_END);
     const now = new Date();
     const nowM = now.getHours()*60 + now.getMinutes();
-    if (nowM < startM || nowM > endM) { removeNow(slotsEl); return; }
+    if(nowM < startM || nowM > endM){ removeNow(slotsEl); return; }
 
     const frac = (nowM - startM) / (endM - startM);
     const y = frac * (slotsEl.scrollHeight - 2);
 
     let line = slotsEl.querySelector('.now-line');
     let dot  = slotsEl.querySelector('.now-dot');
-    if (!line) { line = document.createElement('div'); line.className='now-line'; slotsEl.appendChild(line); }
-    if (!dot)  { dot  = document.createElement('div');  dot.className='now-dot';  slotsEl.appendChild(dot); }
+    if(!line){ line=document.createElement('div'); line.className='now-line'; slotsEl.appendChild(line); }
+    if(!dot){  dot=document.createElement('div');  dot.className='now-dot';  slotsEl.appendChild(dot); }
     line.style.top = `${y}px`;
     dot.style.top  = `${y}px`;
   }
   function removeNow(el){ el.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove()); }
-  function toMin(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
 
-  function heartbeat(){
-    tickClock();
-    renderWeek(); // alle 30s neu zeichnen
-  }
+  function heartbeat(){ tickClock(); renderWeek(); }
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit",(e)=>{
     e.preventDefault();
-    msg.textContent = "";
-    const first = form.first.value.trim();
-    const last  = form.last.value.trim();
-    const email = form.email.value.trim();
-    if (selectedTs == null){ msg.innerHTML = '<span class="err">Bitte Termin wählen.</span>'; return; }
-    if (!first || !last){ msg.innerHTML = '<span class="err">Vor- und Nachname angeben.</span>'; return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ msg.innerHTML = '<span class="err">E-Mail ungültig.</span>'; return; }
-
+    msg.textContent="";
+    const first=form.first.value.trim();
+    const last =form.last.value.trim();
+    const email=form.email.value.trim();
+    if(selectedTs==null){ msg.innerHTML='<span class="err">Bitte Termin wählen.</span>'; return; }
+    if(!first||!last){ msg.innerHTML='<span class="err">Vor- und Nachname angeben.</span>'; return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ msg.innerHTML='<span class="err">E-Mail ungültig.</span>'; return; }
     booked.add(selectedTs);
     renderWeek();
-    msg.innerHTML = '<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail.</span>';
+    msg.innerHTML='<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail.</span>';
     form.reset();
   });
 
