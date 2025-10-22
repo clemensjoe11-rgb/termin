@@ -77,17 +77,16 @@
 (() => {
   // Konfiguration
   const SLOT_MINUTES = 30;
-  const DAY_START = "8:00";
+  const DAY_START = "08:00";
   const DAY_END   = "17:00";
   const LOCALE = "de-DE";
 
-  const booked = new Set([
-    // Beispiel: "2025-03-12T16:00"
-  ]);
+  // gebuchte Slots als Zeitstempel (ms)
+  const booked = new Set(); // Set<number>
 
   // State
   let weekOffset = 0;
-  let selectedIso = null;
+  let selectedTs = null; // number
 
   // DOM
   const grid = document.getElementById("weekGrid");
@@ -125,23 +124,25 @@
     return date;
   }
   function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate()+n); return x; }
-  function isoFor(date, hm) {
-    const [h,m] = hm.split(":").map(Number);
+
+  // lokale Zeit -> ms-Zeitstempel
+  function tsFor(date, hm){
+    const [h,m] = hm.split(':').map(Number);
     const x = new Date(date);
-    x.setHours(h,m,0,0);
-    return x.toISOString().slice(0,16);
+    x.setHours(h, m, 0, 0);
+    return x.getTime();
   }
 
   function renderWeek() {
     grid.innerHTML = "";
-    const now = new Date();
+    const now = Date.now();
     const base = startOfWeek(new Date());
     const weekStart = addDays(base, weekOffset*7);
     const times = rangeTimes(DAY_START, DAY_END, SLOT_MINUTES);
 
     for (let i=0;i<7;i++) {
       const day = addDays(weekStart, i);
-      const isToday = day.toDateString() === now.toDateString();
+      const isToday = day.toDateString() === new Date().toDateString();
 
       const col = document.createElement("div");
       col.className = "day"+(isToday?" today":"");
@@ -158,10 +159,10 @@
       col.appendChild(list);
 
       for (const t of times) {
-        const iso = isoFor(day, t);
-        const when = new Date(iso);
-        const inPast = when < now;
-        const isBooked = booked.has(iso);
+        const ts = tsFor(day, t);      // number
+        const when = new Date(ts);
+        const inPast = ts < now;
+        const isBooked = booked.has(ts);
 
         const btn = document.createElement("button");
         btn.type = "button";
@@ -174,58 +175,40 @@
         btn.onclick = () => {
           document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
           btn.classList.add("selected");
-          selectedIso = iso;
+          selectedTs = ts;
           msg.innerHTML = `Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE,{weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>`;
         };
         list.appendChild(btn);
       }
 
-      // Jetzt-Linie in heutiger Spalte
-      if (isToday) {
-        requestAnimationFrame(() => positionNowLine(list));
-      }
-
+      if (isToday) requestAnimationFrame(() => positionNowLine(list));
       grid.appendChild(col);
     }
   }
 
   function positionNowLine(slotsEl){
-    // Grenzen
     const startM = toMin(DAY_START);
     const endM   = toMin(DAY_END);
     const now = new Date();
     const nowM = now.getHours()*60 + now.getMinutes();
+    if (nowM < startM || nowM > endM) { removeNow(slotsEl); return; }
 
-    // Außerhalb des Zeitfensters → keine Linie
-    if (nowM < startM || nowM > endM) {
-      removeNow(slotsEl);
-      return;
-    }
-
-    const rect = slotsEl.getBoundingClientRect();
-    const top  = slotsEl.scrollTop; // not used, layout static
     const frac = (nowM - startM) / (endM - startM);
-    const y = frac * (slotsEl.scrollHeight - 2); // px
+    const y = frac * (slotsEl.scrollHeight - 2);
 
     let line = slotsEl.querySelector('.now-line');
     let dot  = slotsEl.querySelector('.now-dot');
-    if (!line) {
-      line = document.createElement('div'); line.className='now-line'; slotsEl.appendChild(line);
-      dot  = document.createElement('div');  dot.className='now-dot';  slotsEl.appendChild(dot);
-    }
+    if (!line) { line = document.createElement('div'); line.className='now-line'; slotsEl.appendChild(line); }
+    if (!dot)  { dot  = document.createElement('div');  dot.className='now-dot';  slotsEl.appendChild(dot); }
     line.style.top = `${y}px`;
     dot.style.top  = `${y}px`;
   }
-  function removeNow(el){
-    el.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());
-  }
+  function removeNow(el){ el.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove()); }
   function toMin(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
 
-  // Live-Updates: Uhr + Verfügbarkeit + Jetzt-Linie
   function heartbeat(){
     tickClock();
-    // Re-render jede 30s, damit eben vergangene Slots gesperrt werden
-    renderWeek();
+    renderWeek(); // alle 30s neu zeichnen
   }
 
   form.addEventListener("submit", (e) => {
@@ -234,17 +217,16 @@
     const first = form.first.value.trim();
     const last  = form.last.value.trim();
     const email = form.email.value.trim();
-    if (!selectedIso){ msg.innerHTML = '<span class="err">Bitte Termin wählen.</span>'; return; }
+    if (selectedTs == null){ msg.innerHTML = '<span class="err">Bitte Termin wählen.</span>'; return; }
     if (!first || !last){ msg.innerHTML = '<span class="err">Vor- und Nachname angeben.</span>'; return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ msg.innerHTML = '<span class="err">E-Mail ungültig.</span>'; return; }
 
-    booked.add(selectedIso);
+    booked.add(selectedTs);
     renderWeek();
     msg.innerHTML = '<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail.</span>';
     form.reset();
   });
 
-  // Init
   tickClock();
   renderWeek();
   setInterval(heartbeat, 30000);
