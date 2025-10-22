@@ -64,27 +64,22 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
   .slot{height:44px;border-radius:12px}
 }
 
-/* fein */
-@media (max-width:900px){.slot{height:42px;font-size:14px}.slots{gap:8px;grid-auto-rows:42px}}
-@media (max-width:480px){.datepick{padding:6px 8px}}
-
-/* Hide all calendar UI when collapsed */
+/* Hide everything except the toggle when collapsed */
 .calendar-hidden .nav-core,
 .calendar-hidden #clock,
 .calendar-hidden #calWrap,
-.calendar-hidden .mobile { display:none !important; }
+.calendar-hidden .mobile,
+.calendar-hidden .card { display:none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="header">
-    <!-- zentrierte Navigation -->
     <div class="nav-core" id="navCore">
       <button id="prev" class="btn icon" aria-label="Vorherige Woche">◀</button>
       <input id="jumpDate" class="datepick" type="date" aria-label="Datum auswählen">
       <button id="next" class="btn icon" aria-label="Nächste Woche">▶</button>
     </div>
-    <!-- nur Toggle rechts -->
     <div class="controls">
       <button id="toggle" class="btn" aria-expanded="true">Kalender verbergen</button>
     </div>
@@ -93,12 +88,10 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
   <div class="card">
     <div id="clock" class="clock">—:—</div>
 
-    <!-- Desktop -->
     <div id="calWrap" class="collapsible open">
       <div class="grid" id="grid"></div>
     </div>
 
-    <!-- Mobile -->
     <div class="mobile">
       <div class="date-strip" id="dateStrip"></div>
       <div class="mobile-slots" id="mSlots"></div>
@@ -117,12 +110,11 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
 </div>
 
 <script>
-(()=>{
+(()=> {
   const SLOT_MIN=30, START="08:00", END="17:00", LOCALE="de-DE";
   let weekOffset=0, selectedTs=null, mobileDayTs=null;
   const booked=new Set();
 
-  // DOM
   const grid=document.getElementById("grid");
   const mStrip=document.getElementById("dateStrip");
   const mSlots=document.getElementById("mSlots");
@@ -141,18 +133,19 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
   const times=(a,b,step)=>{const out=[];for(let m=toMin(a);m<toMin(b);m+=step){out.push(`${String(m/60|0).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`)}return out;}
   const tsFor=(date,hm)=>{const[h,m]=hm.split(":").map(Number);const x=new Date(date);x.setHours(h,m,0,0);return x.getTime()}
 
-  // Controls
   prev.onclick =()=>{weekOffset--; renderAll()}
   next.onclick =()=>{weekOffset++; renderAll()}
-  toggle.onclick=()=>{
-    const isHidden = document.body.classList.toggle('calendar-hidden');
-    // für A11y
-    toggle.setAttribute('aria-expanded', String(!isHidden));
-    // Collapsible mitführen
-    calWrap.classList.toggle('open', !isHidden);
-  }
+
+  // Updated: hide all UI (except toggle) and update button text
+  toggle.onclick = () => {
+    const hidden = document.body.classList.toggle('calendar-hidden');
+    toggle.setAttribute('aria-expanded', String(!hidden));
+    toggle.textContent = hidden ? 'Kalender anzeigen' : 'Kalender verbergen';
+    calWrap.classList.toggle('open', !hidden);
+  };
+
   jumpDate.value = new Date().toISOString().slice(0,10);
-  jumpDate.onchange=()=>{ if(!jumpDate.value) return; setWeekByDate(new Date(jumpDate.value)); }
+  jumpDate.onchange=()=>{ if(!jumpDate.value) return; setWeekByDate(new Date(jumpDate.value)); };
 
   function setWeekByDate(date){
     const base=startOfWeek(new Date());
@@ -161,13 +154,12 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
     weekOffset = Math.trunc(diffDays/7);
     mobileDayTs = date.setHours(0,0,0,0);
     renderAll();
-    focusTodayMobile(date);
   }
 
-  // Clock
-  function tick(){clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+  function tick(){
+    clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+  }
 
-  // Desktop render
   function renderDesktop(){
     grid.innerHTML="";
     const now=Date.now(), base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
@@ -194,7 +186,6 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
     }
   }
 
-  // Mobile render
   function renderMobile(){
     mStrip.innerHTML=""; mSlots.innerHTML="";
     const base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
@@ -210,6 +201,7 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
     }
     renderMobileSlots(new Date(mobileDayTs??addDays(weekStart,0)), timesList, now);
   }
+
   function renderMobileSlots(day,timesList,now){
     mSlots.innerHTML="";
     for(const t of timesList){
@@ -225,7 +217,6 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
     else mSlots.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());
   }
 
-  // Helpers
   function positionNowLine(container){
     const s=toMin(START), e=toMin(END), now=new Date(), m=now.getHours()*60+now.getMinutes();
     if(m<s||m>e){container.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());return;}
@@ -235,15 +226,16 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
     if(!d){d=document.createElement('div');d.className='now-dot';container.appendChild(d)}
     l.style.top=`${y}px`; d.style.top=`${y}px`;
   }
+
   function selectSlot(ts, btn){
     document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
     btn.classList.add("selected"); selectedTs=ts;
     const when=new Date(ts);
     msg.innerHTML=`Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`;
   }
+
   function isMobile(){ return matchMedia("(max-width: 720px)").matches }
   function renderAll(){ tick(); if(isMobile()){renderMobile()} else {renderDesktop()} }
-  function tick(){ clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) }
 
   // Form
   form.addEventListener("submit", e=>{
