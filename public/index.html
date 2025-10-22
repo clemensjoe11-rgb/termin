@@ -11,11 +11,18 @@
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,Segoe UI,Arial;display:grid;place-items:start center;min-height:100svh}
 .wrap{width:min(1100px,100%);padding:24px}
 .header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-bottom:12px}
-.h1{margin:0;font-size:22px} .month{justify-self:center;color:var(--muted);font-weight:600} .controls{justify-self:end;display:flex;gap:8px;flex-wrap:wrap}
+.h1{margin:0;font-size:22px}
+.month{justify-self:center;color:var(--muted);font-weight:600}
+.controls{justify-self:end;display:flex;gap:8px;align-items:center}
 .btn{border-radius:12px;padding:8px 12px;cursor:pointer;font-weight:600;border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--text)}
-.btn.primary{background:var(--brand);border:none;color:#0b0c0f} .btn.primary:hover{background:var(--brand-600)}
+.btn.icon{width:40px;height:40px;display:grid;place-items:center;font-size:18px;border-radius:10px}
+.btn.primary{background:var(--brand);border:none;color:#0b0c0f}.btn.primary:hover{background:var(--brand-600)}
+.datepick{appearance:none;background:#0f1215;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:8px 10px;border-radius:10px;font:inherit}
 .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
 .clock{color:var(--muted);text-align:center;margin-bottom:12px;font-variant-numeric:tabular-nums}
+
+.collapsible{overflow:hidden;max-height:0;transition:max-height .35s ease}
+.collapsible.open{max-height:2000px}
 
 /* Desktop-Kalender */
 .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}
@@ -34,51 +41,42 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-
 /* Formular */
 .form{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .form .full{grid-column:1/-1} label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text)}
+input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text)}
 .row-end{display:flex;gap:12px;justify-content:flex-end;margin-top:6px}
-.hint{color:var(--muted);font-size:13px} .ok{color:#3ddc97} .err{color:#ff6b6b}
+.hint{color:var(--muted);font-size:13px}.ok{color:#3ddc97}.err{color:#ff6b6b}
 
-/* ---------- Mobile-Ansicht: 2-Stufen-Flow ---------- */
+/* Mobile 2-Stufen-Flow */
 .mobile{display:none}
-@media (max-width: 720px){
-  .grid{display:none}                /* Desktop-Raster aus */
-  .mobile{display:grid;gap:12px}     /* Mobile-Ansicht an */
-  .date-strip{
-    display:grid;grid-auto-flow:column;grid-auto-columns:min(22vw,92px);
-    gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:4px 2px
-  }
-  .date-btn{
-    scroll-snap-align:center;display:grid;gap:4px;justify-items:center;padding:10px 8px;border-radius:12px;
-    border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text);cursor:pointer
-  }
-  .date-btn .dn{font-weight:600}
-  .date-btn .dw{font-size:12px;color:var(--muted)}
+@media (max-width:720px){
+  .grid{display:none}
+  .mobile{display:grid;gap:12px}
+  .date-strip{display:grid;grid-auto-flow:column;grid-auto-columns:min(22vw,92px);gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:4px 2px}
+  .date-btn{scroll-snap-align:center;display:grid;gap:4px;justify-items:center;padding:10px 8px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text);cursor:pointer}
+  .date-btn .dn{font-weight:600}.date-btn .dw{font-size:12px;color:var(--muted)}
   .date-btn.active{outline:2px solid var(--brand);border-color:transparent}
   .mobile-slots{display:grid;grid-auto-rows:44px;gap:8px;position:relative}
   .slot{height:44px;border-radius:12px}
 }
 
-/* kleine Feinschliffe */
-@media (max-width: 900px){ .slot{height:42px;font-size:14px} .slots{gap:8px;grid-auto-rows:42px} .controls .btn{padding:6px 10px;font-size:14px} }
-@media (max-width: 480px){
-  .header{grid-template-columns:1fr auto;grid-template-rows:auto auto;row-gap:6px}
-  .month{grid-column:1/-1;justify-self:start}
-  .controls{justify-self:end;gap:6px}
-  .btn{padding:6px 8px}
-  label{font-size:11px} input{padding:10px}
+/* Feinjustage */
+@media (max-width:900px){.slot{height:42px;font-size:14px}.slots{gap:8px;grid-auto-rows:42px}.controls .btn{padding:6px 10px;font-size:14px}}
+@media (max-width:480px){
+  .header{grid-template-columns:auto 1fr auto;grid-template-rows:auto;align-items:center}
+  .h1{font-size:18px}
+  .month{display:none}
+  .datepick{padding:6px 8px}
 }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="header">
-    <h1 class="h1">Termine</h1>
-    <div id="month" class="month">—</div>
+    <button id="prev" class="btn icon" aria-label="Vorherige Woche">◀</button>
+    <input id="jumpDate" class="datepick" type="date" aria-label="Datum auswählen">
+    <button id="next" class="btn icon" aria-label="Nächste Woche">▶</button>
     <div class="controls">
-      <button id="toggle" class="btn" aria-expanded="true">Kalender verbergen</button>
-      <button id="prev" class="btn">Zurück</button>
-      <button id="next" class="btn">Weiter</button>
       <button id="today" class="btn">Heute</button>
+      <button id="toggle" class="btn" aria-expanded="true">Kalender verbergen</button>
     </div>
   </div>
 
@@ -97,9 +95,9 @@ input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,
     </div>
 
     <form id="form" class="form" novalidate>
-      <div><label for="first">Vorname</label><input id="first" name="first" autocomplete="given-name" required></div>
-      <div><label for="last">Nachname</label><input id="last" name="last" autocomplete="family-name" required></div>
-      <div><label for="email">E-Mail</label><input id="email" name="email" type="email" autocomplete="email" required></div>
+      <div><label for="first">Vorname</label><input id="first" name="first" required></div>
+      <div><label for="last">Nachname</label><input id="last" name="last" required></div>
+      <div><label for="email">E-Mail</label><input id="email" name="email" type="email" required></div>
       <div class="full">
         <div class="row-end"><button class="btn primary" type="submit">Bestätigen</button></div>
         <div id="msg" class="hint" role="status" aria-live="polite"></div>
@@ -118,28 +116,37 @@ input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,
   const grid=document.getElementById("grid");
   const mStrip=document.getElementById("dateStrip");
   const mSlots=document.getElementById("mSlots");
-  const month=document.getElementById("month");
   const clock=document.getElementById("clock");
-  const toggle=document.getElementById("toggle");
   const prev=document.getElementById("prev");
   const next=document.getElementById("next");
   const todayBtn=document.getElementById("today");
+  const toggle=document.getElementById("toggle");
   const calWrap=document.getElementById("calWrap");
   const form=document.getElementById("form");
   const msg=document.getElementById("msg");
+  const jumpDate=document.getElementById("jumpDate");
 
   const toMin=s=>{const[a,b]=s.split(":").map(Number);return a*60+b;}
   const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
   const startOfWeek=d=>{const x=new Date(d);const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);x.setHours(0,0,0,0);return x;}
   const times=(a,b,step)=>{const out=[];for(let m=toMin(a);m<toMin(b);m+=step){out.push(`${String(m/60|0).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`)}return out;}
   const tsFor=(date,hm)=>{const[h,m]=hm.split(":").map(Number);const x=new Date(date);x.setHours(h,m,0,0);return x.getTime()}
-  const monthText=w=>{const e=addDays(w,6);return (w.getMonth()===e.getMonth()&&w.getFullYear()===e.getFullYear())?w.toLocaleDateString(LOCALE,{month:'long',year:'numeric'}):`${w.toLocaleDateString(LOCALE,{month:'long'})} / ${e.toLocaleDateString(LOCALE,{month:'long',year:'numeric'})}`}
 
   // Controls
-  toggle.onclick=()=>{const open=calWrap.classList.toggle("open");toggle.setAttribute("aria-expanded",open);toggle.textContent=open?"Kalender verbergen":"Kalender anzeigen";}
   prev.onclick =()=>{weekOffset--; renderAll()}
   next.onclick =()=>{weekOffset++; renderAll()}
-  todayBtn.onclick=()=>{weekOffset=0; renderAll(); scrollTodayMobile()}
+  todayBtn.onclick=()=>{weekOffset=0; renderAll(); focusTodayMobile()}
+  toggle.onclick=()=>{const open=calWrap.classList.toggle("open");toggle.setAttribute("aria-expanded",open);toggle.textContent=open?"Kalender verbergen":"Kalender anzeigen";}
+  jumpDate.onchange=()=>{ if(!jumpDate.value) return; setWeekByDate(new Date(jumpDate.value)); }
+
+  function setWeekByDate(date){
+    const base=startOfWeek(new Date());
+    const target=startOfWeek(date);
+    const diffDays=Math.round((target-base)/86400000);
+    weekOffset = Math.trunc(diffDays/7);
+    mobileDayTs = date.setHours(0,0,0,0);
+    renderAll(); focusTodayMobile(date);
+  }
 
   // Clock
   function tick(){clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
@@ -148,7 +155,6 @@ input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,
   function renderDesktop(){
     grid.innerHTML="";
     const now=Date.now(), base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
-    month.textContent=monthText(weekStart);
     const timesList=times(START,END,SLOT_MIN);
 
     for(let i=0;i<7;i++){
@@ -172,31 +178,20 @@ input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,
     }
   }
 
-  function positionNowLine(container){
-    const s=toMin(START), e=toMin(END), now=new Date(), m=now.getHours()*60+now.getMinutes();
-    if(m<s||m>e){container.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());return;}
-    const y=((m-s)/(e-s))*(container.scrollHeight-2);
-    let l=container.querySelector('.now-line'), d=container.querySelector('.now-dot');
-    if(!l){l=document.createElement('div');l.className='now-line';container.appendChild(l)}
-    if(!d){d=document.createElement('div');d.className='now-dot';container.appendChild(d)}
-    l.style.top=`${y}px`; d.style.top=`${y}px`;
-  }
-
   // Mobile render
   function renderMobile(){
     mStrip.innerHTML=""; mSlots.innerHTML="";
     const base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
     const now=Date.now(); const timesList=times(START,END,SLOT_MIN);
-    // Date strip
+
     for(let i=0;i<7;i++){
       const day=addDays(weekStart,i), isToday=day.toDateString()===(new Date()).toDateString();
       const btn=document.createElement("button"); btn.type="button"; btn.className="date-btn";
       btn.innerHTML=`<div class="dn">${day.toLocaleDateString(LOCALE,{day:'2-digit'})}</div><div class="dw">${day.toLocaleDateString(LOCALE,{weekday:'short'})}${isToday?' • heute':''}</div>`;
       btn.onclick=()=>{[...mStrip.children].forEach(b=>b.classList.remove('active'));btn.classList.add('active');mobileDayTs=day.getTime(); renderMobileSlots(day,timesList,now)}
-      if(isToday && mobileDayTs===null){btn.classList.add('active'); mobileDayTs=day.getTime()}
+      if((mobileDayTs==null && isToday) || (mobileDayTs && new Date(mobileDayTs).toDateString()===day.toDateString())){btn.classList.add('active');}
       mStrip.appendChild(btn);
     }
-    // Initial slots
     renderMobileSlots(new Date(mobileDayTs??addDays(weekStart,0)), timesList, now);
   }
   function renderMobileSlots(day,timesList,now){
@@ -209,28 +204,36 @@ input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,
       btn.onclick=()=>selectSlot(ts, btn);
       mSlots.appendChild(btn);
     }
-    // Now line
     const isToday=(new Date(day)).toDateString()===(new Date()).toDateString();
     if(isToday) requestAnimationFrame(()=>positionNowLine(mSlots));
     else mSlots.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());
   }
-  function scrollTodayMobile(){
-    const active=[...mStrip.children].find(b=>/heute/.test(b.textContent)||b.classList.contains('active'));
-    if(active) active.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
-  }
 
+  // Helpers
+  function positionNowLine(container){
+    const s=toMin(START), e=toMin(END), now=new Date(), m=now.getHours()*60+now.getMinutes();
+    if(m<s||m>e){container.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());return;}
+    const y=((m-s)/(e-s))*(container.scrollHeight-2);
+    let l=container.querySelector('.now-line'), d=container.querySelector('.now-dot');
+    if(!l){l=document.createElement('div');l.className='now-line';container.appendChild(l)}
+    if(!d){d=document.createElement('div');d.className='now-dot';container.appendChild(d)}
+    l.style.top=`${y}px`; d.style.top=`${y}px`;
+  }
   function selectSlot(ts, btn){
     document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
     btn.classList.add("selected"); selectedTs=ts;
     const when=new Date(ts);
     msg.innerHTML=`Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`;
   }
-
-  // Render switch
   function isMobile(){ return matchMedia("(max-width: 720px)").matches }
-  function renderAll(){
-    tick();
-    if(isMobile()){ renderMobile() } else { renderDesktop() }
+  function renderAll(){ tick(); if(isMobile()){renderMobile()} else {renderDesktop()} }
+  function tick(){ clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) }
+  function focusTodayMobile(date){
+    const target = date ? new Date(date) : new Date();
+    mobileDayTs = startOfWeek(target).getTime() + ((target.getDay()+6)%7)*86400000;
+    renderAll();
+    const active=[...mStrip.children].find(b=>b.classList.contains('active'));
+    if(active) active.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
   }
 
   // Form
@@ -243,7 +246,11 @@ input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,
     booked.add(selectedTs); renderAll(); msg.innerHTML='<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail.</span>'; form.reset();
   });
 
-  // Init + Live updates
+  // Init
+  // Default-Wert des Datepickers = heute
+  const isoToday=new Date().toISOString().slice(0,10);
+  jumpDate.value=isoToday;
+
   tick(); renderAll();
   setInterval(()=>{tick(); renderAll()}, 30000);
   addEventListener("resize", renderAll);
