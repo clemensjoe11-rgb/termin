@@ -17,8 +17,12 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-
 .nav-core{place-self:center;display:flex;align-items:center;gap:12px}
 .btn{border-radius:12px;padding:8px 12px;cursor:pointer;font-weight:600;border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--text)}
 .btn.icon{width:40px;height:40px;display:grid;place-items:center;font-size:18px;border-radius:10px}
+.btn.primary{background:var(--brand);border:none;color:#0b0c0f}
+.btn.primary:hover{background:var(--brand-600)}
 .datepick{appearance:none;background:#0f1215;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:8px 10px;border-radius:10px;font:inherit}
 .controls{justify-self:end}
+
+/* Shell */
 .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
 .clock{color:var(--muted);text-align:center;margin-bottom:12px;font-variant-numeric:tabular-nums}
 
@@ -41,15 +45,18 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-
 .now-line{position:absolute;left:0;right:0;height:2px;background:var(--danger);box-shadow:0 0 0 2px rgba(255,92,92,.15)}
 .now-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--danger);left:-6px;transform:translateY(-4px)}
 
-/* Formular */
-.form{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+/* Formular (neu, wie Bild 2) */
+.form-block{margin-top:16px}
+.form{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:14px}
 .form .full{grid-column:1/-1}
 label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text)}
-.row-end{display:flex;gap:12px;justify-content:flex-end;margin-top:6px}
-.btn.primary{background:var(--brand);border:none;color:#0b0c0f}
-.btn.primary:hover{background:var(--brand-600)}
-.hint{color:var(--muted);font-size:13px}.ok{color:#3ddc97}.err{color:#ff6b6b}
+input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text)}
+.inline{display:grid;grid-template-columns:140px 1fr;gap:10px}
+.terms{font-size:13px;color:var(--muted);line-height:1.4}
+.terms small{display:block;margin-top:6px}
+.row-end{display:flex;gap:12px;justify-content:flex-end}
+.hint{color:var(--muted);font-size:13px;margin-top:6px}
+.ok{color:#3ddc97}.err{color:#ff6b6b}
 
 /* Mobile 2-Stufen-Flow */
 .mobile{display:none}
@@ -62,20 +69,26 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
   .date-btn.active{outline:2px solid var(--brand);border-color:transparent}
   .mobile-slots{display:grid;grid-auto-rows:44px;gap:8px;position:relative}
   .slot{height:44px;border-radius:12px}
+  .form{grid-template-columns:1fr}
+  .inline{grid-template-columns:1fr 1fr}
 }
 
-/* Hide everything except the toggle when collapsed */
+/* Feinschliff */
+@media (max-width:900px){.slot{height:42px;font-size:14px}.slots{gap:8px;grid-auto-rows:42px}}
+@media (max-width:480px){.datepick{padding:6px 8px}.inline{grid-template-columns:110px 1fr}}
+
+/* Alles ausblenden wenn versteckt */
 .calendar-hidden .nav-core,
 .calendar-hidden #clock,
 .calendar-hidden #calWrap,
 .calendar-hidden .mobile,
-.calendar-hidden .card { display:none !important; }
+.calendar-hidden .form-block { display:none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="header">
-    <div class="nav-core" id="navCore">
+    <div class="nav-core">
       <button id="prev" class="btn icon" aria-label="Vorherige Woche">◀</button>
       <input id="jumpDate" class="datepick" type="date" aria-label="Datum auswählen">
       <button id="next" class="btn icon" aria-label="Nächste Woche">▶</button>
@@ -88,169 +101,227 @@ input[type=email],input[name=first],input[name=last]{width:100%;padding:11px 12p
   <div class="card">
     <div id="clock" class="clock">—:—</div>
 
+    <!-- Desktop -->
     <div id="calWrap" class="collapsible open">
       <div class="grid" id="grid"></div>
     </div>
 
+    <!-- Mobile -->
     <div class="mobile">
       <div class="date-strip" id="dateStrip"></div>
       <div class="mobile-slots" id="mSlots"></div>
     </div>
 
-    <form id="form" class="form" novalidate>
-      <div><label for="first">Vorname</label><input id="first" name="first" required></div>
-      <div><label for="last">Nachname</label><input id="last" name="last" required></div>
-      <div><label for="email">E-Mail</label><input id="email" name="email" type="email" required></div>
-      <div class="full">
-        <div class="row-end"><button class="btn primary" type="submit">Bestätigen</button></div>
-        <div id="msg" class="hint" role="status" aria-live="polite"></div>
-      </div>
-    </form>
+    <!-- Neues Formular -->
+    <div class="form-block">
+      <form id="form" class="form" novalidate>
+        <div>
+          <label for="first">Vorname</label>
+          <input id="first" name="first" autocomplete="given-name" required>
+        </div>
+        <div>
+          <label for="last">Nachname</label>
+          <input id="last" name="last" autocomplete="family-name" required>
+        </div>
+        <div>
+          <label for="gender">Geschlecht</label>
+          <select id="gender" name="gender" required>
+            <option value="" selected>Bitte auswählen</option>
+            <option>Weiblich</option>
+            <option>Männlich</option>
+            <option>Divers</option>
+            <option>Keine Angabe</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="dob">Geburtsdatum</label>
+          <input id="dob" name="dob" type="date" required>
+        </div>
+
+        <div class="full">
+          <label for="email">E-Mail</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+
+        <div class="full">
+          <label>Mobilnummer</label>
+          <div class="inline">
+            <select id="cc" name="cc">
+              <option value="+352">🇱🇺 +352</option>
+              <option value="+49">🇩🇪 +49</option>
+              <option value="+33">🇫🇷 +33</option>
+              <option value="+32">🇧🇪 +32</option>
+            </select>
+            <input id="phone" name="phone" type="tel" inputmode="tel" placeholder="628 123 456" required>
+          </div>
+        </div>
+
+        <div class="full terms">
+          <label><input id="terms" type="checkbox" required> Ich akzeptiere die Bedingungen.</label>
+          <small>
+            Kurzfassung: Der Termin kann vom Anbieter aus organisatorischen Gründen
+            verschoben oder storniert werden. Sie werden per E-Mail oder SMS informiert.
+            Mit dem Absenden stimmen Sie der Kontaktaufnahme zu.
+          </small>
+        </div>
+
+        <div class="full row-end">
+          <button class="btn primary" type="submit">Bestätigen</button>
+        </div>
+        <div id="msg" class="full hint" role="status" aria-live="polite"></div>
+      </form>
+    </div>
   </div>
 </div>
 
 <script>
-(()=> {
-  const SLOT_MIN=30, START="08:00", END="17:00", LOCALE="de-DE";
-  let weekOffset=0, selectedTs=null, mobileDayTs=null;
-  const booked=new Set();
+(()=>{
+// Kalender-Setup (unverändert in der Logik)
+const SLOT_MIN=30, START="08:00", END="17:00", LOCALE="de-DE";
+let weekOffset=0, selectedTs=null, mobileDayTs=null;
+const booked=new Set();
 
-  const grid=document.getElementById("grid");
-  const mStrip=document.getElementById("dateStrip");
-  const mSlots=document.getElementById("mSlots");
-  const clock=document.getElementById("clock");
-  const prev=document.getElementById("prev");
-  const next=document.getElementById("next");
-  const toggle=document.getElementById("toggle");
-  const calWrap=document.getElementById("calWrap");
-  const form=document.getElementById("form");
-  const msg=document.getElementById("msg");
-  const jumpDate=document.getElementById("jumpDate");
+const grid=document.getElementById("grid");
+const mStrip=document.getElementById("dateStrip");
+const mSlots=document.getElementById("mSlots");
+const clock=document.getElementById("clock");
+const prev=document.getElementById("prev");
+const next=document.getElementById("next");
+const toggle=document.getElementById("toggle");
+const calWrap=document.getElementById("calWrap");
+const form=document.getElementById("form");
+const msg=document.getElementById("msg");
+const jumpDate=document.getElementById("jumpDate");
 
-  const toMin=s=>{const[a,b]=s.split(":").map(Number);return a*60+b;}
-  const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
-  const startOfWeek=d=>{const x=new Date(d);const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);x.setHours(0,0,0,0);return x;}
-  const times=(a,b,step)=>{const out=[];for(let m=toMin(a);m<toMin(b);m+=step){out.push(`${String(m/60|0).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`)}return out;}
-  const tsFor=(date,hm)=>{const[h,m]=hm.split(":").map(Number);const x=new Date(date);x.setHours(h,m,0,0);return x.getTime()}
+const toMin=s=>{const[a,b]=s.split(":").map(Number);return a*60+b;}
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+const startOfWeek=d=>{const x=new Date(d);const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);x.setHours(0,0,0,0);return x;}
+const times=(a,b,step)=>{const out=[];for(let m=toMin(a);m<toMin(b);m+=step){out.push(`${String(m/60|0).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`)}return out;}
+const tsFor=(date,hm)=>{const[h,m]=hm.split(":").map(Number);const x=new Date(date);x.setHours(h,m,0,0);return x.getTime()}
 
-  prev.onclick =()=>{weekOffset--; renderAll()}
-  next.onclick =()=>{weekOffset++; renderAll()}
+prev.onclick =()=>{weekOffset--; renderAll()}
+next.onclick =()=>{weekOffset++; renderAll()}
+toggle.onclick=()=>{
+  const isHidden = document.body.classList.toggle('calendar-hidden');
+  toggle.setAttribute('aria-expanded', String(!isHidden));
+  calWrap.classList.toggle('open', !isHidden);
+}
+jumpDate.value = new Date().toISOString().slice(0,10);
+jumpDate.onchange=()=>{ if(!jumpDate.value) return; setWeekByDate(new Date(jumpDate.value)); }
 
-  // Updated: hide all UI (except toggle) and update button text
-  toggle.onclick = () => {
-    const hidden = document.body.classList.toggle('calendar-hidden');
-    toggle.setAttribute('aria-expanded', String(!hidden));
-    toggle.textContent = hidden ? 'Kalender anzeigen' : 'Kalender verbergen';
-    calWrap.classList.toggle('open', !hidden);
-  };
+function setWeekByDate(date){
+  const base=startOfWeek(new Date());
+  const target=startOfWeek(date);
+  const diffDays=Math.round((target-base)/86400000);
+  weekOffset = Math.trunc(diffDays/7);
+  mobileDayTs = date.setHours(0,0,0,0);
+  renderAll();
+}
 
-  jumpDate.value = new Date().toISOString().slice(0,10);
-  jumpDate.onchange=()=>{ if(!jumpDate.value) return; setWeekByDate(new Date(jumpDate.value)); };
+function tick(){clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
 
-  function setWeekByDate(date){
-    const base=startOfWeek(new Date());
-    const target=startOfWeek(date);
-    const diffDays=Math.round((target-base)/86400000);
-    weekOffset = Math.trunc(diffDays/7);
-    mobileDayTs = date.setHours(0,0,0,0);
-    renderAll();
-  }
-
-  function tick(){
-    clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
-  }
-
-  function renderDesktop(){
-    grid.innerHTML="";
-    const now=Date.now(), base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
-    const timesList=times(START,END,SLOT_MIN);
-
-    for(let i=0;i<7;i++){
-      const day=addDays(weekStart,i), isToday=day.toDateString()===(new Date()).toDateString();
-      const col=document.createElement("div"); col.className="day"+(isToday?" today":"");
-      const head=document.createElement("div"); head.className="head";
-      head.innerHTML=`<div class="dnum">${day.toLocaleDateString(LOCALE,{day:'2-digit'})}</div><div class="dow">${day.toLocaleDateString(LOCALE,{weekday:'short'})}${isToday?' • heute':''}</div>`;
-      const list=document.createElement("div"); list.className="slots";
-      col.append(head,list);
-
-      for(const t of timesList){
-        const ts=tsFor(day,t), inPast=ts<now, isBooked=booked.has(ts);
-        const btn=document.createElement("button"); btn.type="button"; btn.textContent=t; btn.className="slot";
-        if(selectedTs===ts) btn.classList.add("selected");
-        if(inPast||isBooked){btn.disabled=true;btn.classList.add("unavailable")}
-        btn.onclick=()=>selectSlot(ts, btn);
-        list.appendChild(btn);
-      }
-      if(isToday) requestAnimationFrame(()=>positionNowLine(list));
-      grid.appendChild(col);
-    }
-  }
-
-  function renderMobile(){
-    mStrip.innerHTML=""; mSlots.innerHTML="";
-    const base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
-    const now=Date.now(); const timesList=times(START,END,SLOT_MIN);
-
-    for(let i=0;i<7;i++){
-      const day=addDays(weekStart,i), isToday=day.toDateString()===(new Date()).toDateString();
-      const btn=document.createElement("button"); btn.type="button"; btn.className="date-btn";
-      btn.innerHTML=`<div class="dn">${day.toLocaleDateString(LOCALE,{day:'2-digit'})}</div><div class="dw">${day.toLocaleDateString(LOCALE,{weekday:'short'})}${isToday?' • heute':''}</div>`;
-      btn.onclick=()=>{[...mStrip.children].forEach(b=>b.classList.remove('active'));btn.classList.add('active');mobileDayTs=day.getTime(); renderMobileSlots(day,timesList,now)}
-      if((mobileDayTs==null && isToday) || (mobileDayTs && new Date(mobileDayTs).toDateString()===day.toDateString())){btn.classList.add('active');}
-      mStrip.appendChild(btn);
-    }
-    renderMobileSlots(new Date(mobileDayTs??addDays(weekStart,0)), timesList, now);
-  }
-
-  function renderMobileSlots(day,timesList,now){
-    mSlots.innerHTML="";
+function renderDesktop(){
+  grid.innerHTML="";
+  const now=Date.now(), base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
+  const timesList=times(START,END,SLOT_MIN);
+  for(let i=0;i<7;i++){
+    const day=addDays(weekStart,i), isToday=day.toDateString()===(new Date()).toDateString();
+    const col=document.createElement("div"); col.className="day"+(isToday?" today":"");
+    const head=document.createElement("div"); head.className="head";
+    head.innerHTML=`<div class="dnum">${day.toLocaleDateString(LOCALE,{day:'2-digit'})}</div><div class="dow">${day.toLocaleDateString(LOCALE,{weekday:'short'})}${isToday?' • heute':''}</div>`;
+    const list=document.createElement("div"); list.className="slots";
+    col.append(head,list);
     for(const t of timesList){
-      const ts=tsFor(day,t), btn=document.createElement("button"); btn.type="button"; btn.textContent=t; btn.className="slot";
-      const inPast=ts<now, isBooked=booked.has(ts);
+      const ts=tsFor(day,t), inPast=ts<now, isBooked=booked.has(ts);
+      const btn=document.createElement("button"); btn.type="button"; btn.textContent=t; btn.className="slot";
       if(selectedTs===ts) btn.classList.add("selected");
       if(inPast||isBooked){btn.disabled=true;btn.classList.add("unavailable")}
       btn.onclick=()=>selectSlot(ts, btn);
-      mSlots.appendChild(btn);
+      list.appendChild(btn);
     }
-    const isToday=(new Date(day)).toDateString()===(new Date()).toDateString();
-    if(isToday) requestAnimationFrame(()=>positionNowLine(mSlots));
-    else mSlots.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());
+    if(isToday) requestAnimationFrame(()=>positionNowLine(list));
+    grid.appendChild(col);
   }
+}
 
-  function positionNowLine(container){
-    const s=toMin(START), e=toMin(END), now=new Date(), m=now.getHours()*60+now.getMinutes();
-    if(m<s||m>e){container.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());return;}
-    const y=((m-s)/(e-s))*(container.scrollHeight-2);
-    let l=container.querySelector('.now-line'), d=container.querySelector('.now-dot');
-    if(!l){l=document.createElement('div');l.className='now-line';container.appendChild(l)}
-    if(!d){d=document.createElement('div');d.className='now-dot';container.appendChild(d)}
-    l.style.top=`${y}px`; d.style.top=`${y}px`;
+function renderMobile(){
+  mStrip.innerHTML=""; mSlots.innerHTML="";
+  const base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
+  const now=Date.now(); const timesList=times(START,END,SLOT_MIN);
+  for(let i=0;i<7;i++){
+    const day=addDays(weekStart,i), isToday=day.toDateString()===(new Date()).toDateString();
+    const btn=document.createElement("button"); btn.type="button"; btn.className="date-btn";
+    btn.innerHTML=`<div class="dn">${day.toLocaleDateString(LOCALE,{day:'2-digit'})}</div><div class="dw">${day.toLocaleDateString(LOCALE,{weekday:'short'})}${isToday?' • heute':''}</div>`;
+    btn.onclick=()=>{[...mStrip.children].forEach(b=>b.classList.remove('active'));btn.classList.add('active');mobileDayTs=day.getTime(); renderMobileSlots(day,timesList,now)}
+    if((mobileDayTs==null && isToday) || (mobileDayTs && new Date(mobileDayTs).toDateString()===day.toDateString())){btn.classList.add('active');}
+    mStrip.appendChild(btn);
   }
-
-  function selectSlot(ts, btn){
-    document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
-    btn.classList.add("selected"); selectedTs=ts;
-    const when=new Date(ts);
-    msg.innerHTML=`Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`;
+  renderMobileSlots(new Date(mobileDayTs??addDays(weekStart,0)), timesList, now);
+}
+function renderMobileSlots(day,timesList,now){
+  mSlots.innerHTML="";
+  for(const t of timesList){
+    const ts=tsFor(day,t), btn=document.createElement("button"); btn.type="button"; btn.textContent=t; btn.className="slot";
+    const inPast=ts<now, isBooked=booked.has(ts);
+    if(selectedTs===ts) btn.classList.add("selected");
+    if(inPast||isBooked){btn.disabled=true;btn.classList.add("unavailable")}
+    btn.onclick=()=>selectSlot(ts, btn);
+    mSlots.appendChild(btn);
   }
+  const isToday=(new Date(day)).toDateString()===(new Date()).toDateString();
+  if(isToday) requestAnimationFrame(()=>positionNowLine(mSlots));
+  else mSlots.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());
+}
 
-  function isMobile(){ return matchMedia("(max-width: 720px)").matches }
-  function renderAll(){ tick(); if(isMobile()){renderMobile()} else {renderDesktop()} }
+function positionNowLine(container){
+  const s=toMin(START), e=toMin(END), now=new Date(), m=now.getHours()*60+now.getMinutes();
+  if(m<s||m>e){container.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());return;}
+  const y=((m-s)/(e-s))*(container.scrollHeight-2);
+  let l=container.querySelector('.now-line'), d=container.querySelector('.now-dot');
+  if(!l){l=document.createElement('div');l.className='now-line';container.appendChild(l)}
+  if(!d){d=document.createElement('div');d.className='now-dot';container.appendChild(d)}
+  l.style.top=`${y}px`; d.style.top=`${y}px`;
+}
+function selectSlot(ts, btn){
+  document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
+  btn.classList.add("selected"); selectedTs=ts;
+  const when=new Date(ts);
+  msg.innerHTML=`Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`;
+}
+function isMobile(){ return matchMedia("(max-width: 720px)").matches }
+function renderAll(){ tick(); if(isMobile()){renderMobile()} else {renderDesktop()} }
+function tick(){ clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) }
 
-  // Form
-  form.addEventListener("submit", e=>{
-    e.preventDefault(); msg.textContent="";
-    const first=form.first.value.trim(), last=form.last.value.trim(), email=form.email.value.trim();
-    if(selectedTs==null){msg.innerHTML='<span class="err">Bitte Termin wählen.</span>';return;}
-    if(!first||!last){msg.innerHTML='<span class="err">Vor- und Nachname angeben.</span>';return;}
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){msg.innerHTML='<span class="err">E-Mail ungültig.</span>';return;}
-    booked.add(selectedTs); renderAll(); msg.innerHTML='<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail.</span>'; form.reset();
-  });
+// Formular-Validierung
+form.addEventListener("submit", e=>{
+  e.preventDefault(); msg.textContent="";
+  const f=form;
+  const first=f.first.value.trim();
+  const last =f.last.value.trim();
+  const gender=f.gender.value;
+  const dob   =f.dob.value;
+  const email =f.email.value.trim();
+  const phone = (f.cc.value || "") + " " + f.phone.value.trim();
+  const okTerms = f.terms.checked;
 
-  // Init
-  renderAll(); tick();
-  setInterval(()=>{tick(); renderAll()}, 30000);
-  addEventListener("resize", renderAll);
+  if(selectedTs==null){msg.innerHTML='<span class="err">Bitte erst einen Termin wählen.</span>';return;}
+  if(!first || !last){msg.innerHTML='<span class="err">Vor- und Nachname angeben.</span>';return;}
+  if(!gender){msg.innerHTML='<span class="err">Geschlecht wählen.</span>';return;}
+  if(!dob){msg.innerHTML='<span class="err">Geburtsdatum angeben.</span>';return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){msg.innerHTML='<span class="err">E-Mail ungültig.</span>';return;}
+  if(!/\d{3,}/.test(f.phone.value)){msg.innerHTML='<span class="err">Mobilnummer prüfen.</span>';return;}
+  if(!okTerms){msg.innerHTML='<span class="err">Bitte Bedingungen akzeptieren.</span>';return;}
+
+  booked.add(selectedTs);
+  renderAll();
+  msg.innerHTML='<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail/SMS.</span>';
+  f.reset();
+});
+
+renderAll(); tick();
+setInterval(()=>{tick(); renderAll()}, 30000);
+addEventListener("resize", renderAll);
 })();
 </script>
 </body>
