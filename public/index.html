@@ -84,6 +84,16 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rg
 .calendar-hidden #calWrap,
 .calendar-hidden .mobile,
 .calendar-hidden .form-block{display:none!important}
+
+/* Floating Confirm Bar */
+.confirm-bar{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:20px; z-index:50; display:none; gap:12px;
+  background:rgba(21,24,28,.9); border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(6px); padding:8px 12px; border-radius:14px;
+}
+.confirm-bar.show{display:flex}
+.calendar-hidden .confirm-bar{display:none!important}
 </style>
 </head>
 <body>
@@ -102,18 +112,15 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rg
   <div class="card">
     <div id="clock" class="clock">—:—</div>
 
-    <!-- Desktop -->
     <div id="calWrap" class="collapsible open">
       <div class="grid" id="grid"></div>
     </div>
 
-    <!-- Mobile -->
     <div class="mobile">
       <div class="date-strip" id="dateStrip"></div>
       <div class="mobile-slots" id="mSlots"></div>
     </div>
 
-    <!-- Formular erscheint erst nach erstem „Bestätigen“ -->
     <div class="form-block" id="formBlock">
       <form id="form" class="form" novalidate>
         <div>
@@ -158,13 +165,15 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rg
           <label><input id="terms" type="checkbox" required> Ich akzeptiere die Bedingungen.</label>
           <small>Kurzfassung: Der Termin kann vom Anbieter aus organisatorischen Gründen verschoben oder storniert werden. Sie werden per E-Mail oder SMS informiert. Mit dem Absenden stimmen Sie der Kontaktaufnahme zu.</small>
         </div>
-        <div class="full row-end">
-          <button class="btn primary" type="submit">Bestätigen</button>
-        </div>
         <div id="msg" class="full hint" role="status" aria-live="polite"></div>
       </form>
     </div>
   </div>
+</div>
+
+<!-- Floating Confirm -->
+<div id="confirmBar" class="confirm-bar">
+  <button id="confirmBtn" class="btn primary" type="button">Weiter</button>
 </div>
 
 <script>
@@ -187,6 +196,8 @@ const form=document.getElementById("form");
 const msg=document.getElementById("msg");
 const jumpDate=document.getElementById("jumpDate");
 const formBlock=document.getElementById("formBlock");
+const confirmBar=document.getElementById("confirmBar");
+const confirmBtn=document.getElementById("confirmBtn");
 
 // Utils
 const toMin=s=>{const[a,b]=s.split(":").map(Number);return a*60+b;}
@@ -198,7 +209,7 @@ const tsFor=(date,hm)=>{const[h,m]=hm.split(":").map(Number);const x=new Date(da
 // Controls
 prev.onclick =()=>{weekOffset--; renderAll()}
 next.onclick =()=>{weekOffset++; renderAll()}
-toggle.onclick=()=>{const hide=document.body.classList.toggle('calendar-hidden');toggle.setAttribute('aria-expanded',String(!hide));calWrap.classList.toggle('open',!hide);if(hide) formBlock.classList.remove('show');}
+toggle.onclick=()=>{const hide=document.body.classList.toggle('calendar-hidden');toggle.setAttribute('aria-expanded',String(!hide));calWrap.classList.toggle('open',!hide);if(hide){confirmBar.classList.remove('show');}}
 jumpDate.value=new Date().toISOString().slice(0,10);
 jumpDate.onchange=()=>{if(!jumpDate.value) return;const base=startOfWeek(new Date());const target=startOfWeek(new Date(jumpDate.value));const diffDays=Math.round((target-base)/86400000);weekOffset=Math.trunc(diffDays/7);mobileDayTs=target.getTime();renderAll();}
 
@@ -270,27 +281,40 @@ function positionNowLine(container){
   if(!d){d=document.createElement('div');d.className='now-dot';container.appendChild(d)}
   l.style.top=`${y}px`; d.style.top=`${y}px`;
 }
+
 function selectSlot(ts,btn){
   document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
   btn.classList.add("selected"); selectedTs=ts;
   const when=new Date(ts);
   msg.innerHTML=`Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`;
-  formBlock.classList.remove('show'); // erst bei Bestätigen öffnen
+  // Show floating bar in preview mode
+  confirmBtn.textContent="Weiter";
+  confirmBtn.dataset.state="preview";
+  confirmBar.classList.add('show');
 }
+
+// Confirm bar logic
+confirmBtn.onclick = () => {
+  if(confirmBtn.dataset.state === "preview"){
+    // open form
+    formBlock.classList.add('show');
+    confirmBtn.textContent="Termin bestätigen";
+    confirmBtn.dataset.state="submit";
+    formBlock.scrollIntoView({behavior:'smooth',block:'start'});
+  }else{
+    // submit form
+    form.requestSubmit();
+  }
+};
+
 function isMobile(){return matchMedia("(max-width: 720px)").matches}
 function renderAll(){tick();if(isMobile()) renderMobile(); else renderDesktop();}
 function tick(){clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
 
-// Formular-Flow: erster Submit -> Formular zeigen; zweiter -> validieren/buchen
+// Form submit
 form.addEventListener("submit", e=>{
-  if(!formBlock.classList.contains('show')){
-    e.preventDefault();
-    if(selectedTs==null){msg.innerHTML='<span class="err">Bitte erst einen Termin wählen.</span>';return;}
-    formBlock.classList.add('show');
-    formBlock.scrollIntoView({behavior:'smooth',block:'start'});
-    return;
-  }
   e.preventDefault(); msg.textContent="";
+  if(selectedTs==null){msg.innerHTML='<span class="err">Bitte erst einen Termin wählen.</span>';return;}
   const f=form;
   const first=f.first.value.trim();
   const last =f.last.value.trim();
@@ -300,7 +324,6 @@ form.addEventListener("submit", e=>{
   const phoneOk=/\d{3,}/.test(f.phone.value);
   const okTerms=f.terms.checked;
 
-  if(selectedTs==null){msg.innerHTML='<span class="err">Bitte erst einen Termin wählen.</span>';return;}
   if(!first||!last){msg.innerHTML='<span class="err">Vor- und Nachname angeben.</span>';return;}
   if(!gender){msg.innerHTML='<span class="err">Geschlecht wählen.</span>';return;}
   if(!dob){msg.innerHTML='<span class="err">Geburtsdatum angeben.</span>';return;}
@@ -313,6 +336,7 @@ form.addEventListener("submit", e=>{
   msg.innerHTML='<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail/SMS.</span>';
   f.reset();
   formBlock.classList.remove('show');
+  confirmBar.classList.remove('show');
 });
 
 // Init
