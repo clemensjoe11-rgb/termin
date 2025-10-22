@@ -1,13 +1,14 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Termin buchen</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root { --brand:#2ec4b6; --brand-600:#26a79b; --bg:#0b0c0f; --card:#15181c; --text:#e8edf2; --muted:#9aa3ad; --danger:#ff5c5c; }
+  :root{--brand:#2ec4b6;--brand-600:#26a79b;--bg:#0b0c0f;--card:#15181c;--text:#e8edf2;--muted:#9aa3ad;--danger:#ff5c5c}
   *{box-sizing:border-box}
+  html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,Segoe UI,Arial;display:grid;place-items:start center;min-height:100svh}
   .wrap{width:min(1100px,100%);padding:24px}
   .header-bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-bottom:12px}
@@ -15,14 +16,13 @@
   .month{justify-self:center;color:var(--muted);font-weight:600}
   .controls{justify-self:end;display:flex;gap:8px}
   button.ghost{background:transparent;border:1px solid rgba(255,255,255,.18);color:#e8edf2;padding:8px 12px;border-radius:10px;cursor:pointer}
+
   .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
   .clock{font-variant-numeric:tabular-nums;color:var(--muted);text-align:center;margin-bottom:10px}
 
-  /* Collapsible */
   .collapsible{overflow:hidden;max-height:0;transition:max-height .35s ease}
   .collapsible.open{max-height:2000px}
 
-  /* Kalender */
   .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}
   .day{display:flex;flex-direction:column;gap:10px}
   .head{display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -30,17 +30,24 @@
   .dnum{font-weight:600}
   .today .head .dnum{background:rgba(255,255,255,.1);padding:2px 8px;border-radius:999px}
 
-  /* Slots als Grid mit festen Zeilenhöhen -> saubere Ausrichtung */
   .slots{display:grid;grid-auto-rows:44px;gap:10px;position:relative}
-  .slot{width:100%;height:44px;display:grid;place-items:center;border:none;border-radius:14px;cursor:pointer;background:var(--brand);color:#0b0c0f;font-weight:600}
+  .slot{
+    width:100%;height:44px;display:grid;place-items:center;
+    border:1px dashed transparent;
+    border-radius:14px;cursor:pointer;
+    background:var(--brand);color:#0b0c0f;font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
   .slot:hover{background:var(--brand-600)}
   .slot.selected{outline:2px solid #fff}
-  .slot.unavailable{background:transparent;border:1px dashed rgba(255,255,255,.2);color:var(--muted);text-decoration:line-through;cursor:not-allowed}
+  .slot.unavailable{
+    background:transparent;border-color:rgba(255,255,255,.20);
+    color:var(--muted);text-decoration:line-through;cursor:not-allowed
+  }
 
-  .now-line{position:absolute;left:-4px;right:-4px;height:2px;background:var(--danger);box-shadow:0 0 0 2px rgba(255,92,92,.15)}
+  .now-line{position:absolute;left:0;right:0;height:2px;background:var(--danger);box-shadow:0 0 0 2px rgba(255,92,92,.15)}
   .now-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--danger);left:-6px;transform:translateY(-4px)}
 
-  /* Formular */
   .form{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .form .full{grid-column:1/-1}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
@@ -48,8 +55,46 @@
   .row-end{display:flex;gap:12px;justify-content:flex-end;margin-top:6px}
   button.primary{background:var(--brand);border:none;color:#0b0c0f;font-weight:600;padding:10px 14px;border-radius:10px;cursor:pointer}
   button.primary:hover{background:#26a79b}
-  .hint{color:var(--muted);font-size:13px;margin-top:6px}
+  .hint{color:var(--muted);font-size:13px}
   .ok{color:#3ddc97}.err{color:#ff6b6b}
+
+  @media (max-width: 900px){
+    .wrap{padding:16px}
+    .slot{height:42px;font-size:14px}
+    .slots{gap:8px;grid-auto-rows:42px}
+    .controls button{padding:6px 10px;font-size:14px}
+  }
+  @media (max-width: 700px){
+    .grid{
+      display:grid;
+      grid-auto-flow:column;
+      grid-auto-columns:86vw;
+      overflow-x:auto;
+      gap:10px;
+      scroll-snap-type:x mandatory;
+      -webkit-overflow-scrolling:touch;
+    }
+    .day{scroll-snap-align:start}
+    .head{position:sticky;top:0;background:var(--card);padding-bottom:6px;z-index:1}
+    .dnum{font-size:18px}
+    .dow{font-size:12px}
+    .slots{grid-auto-rows:40px;gap:8px}
+    .slot{height:40px;border-radius:12px}
+    .now-line{left:0;right:0}
+  }
+  @media (max-width: 480px){
+    .grid{grid-auto-columns:92vw}
+    .header-bar{
+      grid-template-columns:1fr auto;
+      grid-template-rows:auto auto;
+      row-gap:6px;
+    }
+    .month{grid-column:1/-1;justify-self:start}
+    .controls{justify-self:end;gap:6px}
+    .controls .ghost{padding:6px 8px}
+    label{font-size:11px}
+    input{padding:10px}
+  }
 </style>
 </head>
 <body>
@@ -74,15 +119,15 @@
     <form id="bookForm" class="form" autocomplete="on" novalidate>
       <div>
         <label for="first">Vorname</label>
-        <input id="first" name="first" required />
+        <input id="first" name="first" required>
       </div>
       <div>
         <label for="last">Nachname</label>
-        <input id="last" name="last" required />
+        <input id="last" name="last" required>
       </div>
       <div>
         <label for="email">E-Mail</label>
-        <input id="email" name="email" type="email" required />
+        <input id="email" name="email" type="email" required>
       </div>
       <div class="full">
         <div class="row-end">
@@ -95,154 +140,109 @@
 </div>
 
 <script>
-(() => {
-  const SLOT_MINUTES = 30;
-  const DAY_START = "08:00";
-  const DAY_END   = "17:00";
-  const LOCALE = "de-DE";
+(()=>{
+  const SLOT_MINUTES=30, DAY_START="08:00", DAY_END="17:00", LOCALE="de-DE";
+  const booked=new Set(); let weekOffset=0, selectedTs=null;
 
-  const booked = new Set(); // Set<number>
-  let weekOffset = 0;
-  let selectedTs = null;
+  const grid=document.getElementById("weekGrid");
+  const clock=document.getElementById("liveClock");
+  const prevBtn=document.getElementById("prevWeek");
+  const nextBtn=document.getElementById("nextWeek");
+  const toggleCalBtn=document.getElementById("toggleCal");
+  const calendar=document.getElementById("calendar");
+  const form=document.getElementById("bookForm");
+  const msg=document.getElementById("msg");
+  const monthLabel=document.getElementById("monthLabel");
 
-  const grid  = document.getElementById("weekGrid");
-  const clock = document.getElementById("liveClock");
-  const prevBtn = document.getElementById("prevWeek");
-  const nextBtn = document.getElementById("nextWeek");
-  const toggleCalBtn = document.getElementById("toggleCal");
-  const calendar = document.getElementById("calendar");
-  const form = document.getElementById("bookForm");
-  const msg  = document.getElementById("msg");
-  const monthLabel = document.getElementById("monthLabel");
+  toggleCalBtn.onclick=()=>{const open=calendar.classList.toggle("open");toggleCalBtn.setAttribute("aria-expanded",String(open));toggleCalBtn.textContent=open?"Kalender verbergen":"Kalender anzeigen";};
+  prevBtn.onclick=()=>{weekOffset-=1;renderWeek();};
+  nextBtn.onclick=()=>{weekOffset+=1;renderWeek();};
 
-  toggleCalBtn.onclick = () => {
-    const open = calendar.classList.toggle('open');
-    toggleCalBtn.setAttribute('aria-expanded', String(open));
-    toggleCalBtn.textContent = open ? 'Kalender verbergen' : 'Kalender anzeigen';
-  };
-  prevBtn.onclick = () => { weekOffset -= 1; renderWeek(); };
-  nextBtn.onclick = () => { weekOffset += 1; renderWeek(); };
+  function tickClock(){const n=new Date();clock.textContent=n.toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});}
 
-  function tickClock(){
-    const n = new Date();
-    clock.textContent = n.toLocaleString(LOCALE,{weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-  }
+  function monthText(weekStart){const end=addDays(weekStart,6);const same=weekStart.getMonth()===end.getMonth()&&weekStart.getFullYear()===end.getFullYear();return same?weekStart.toLocaleDateString(LOCALE,{month:'long',year:'numeric'}):`${weekStart.toLocaleDateString(LOCALE,{month:'long'})} / ${end.toLocaleDateString(LOCALE,{month:'long',year:'numeric'})}`;}
 
-  function monthText(weekStart){
-    const end = addDays(weekStart, 6);
-    const sameMonth = weekStart.getMonth() === end.getMonth() && weekStart.getFullYear() === end.getFullYear();
-    if (sameMonth) return weekStart.toLocaleDateString(LOCALE,{month:'long', year:'numeric'});
-    return `${weekStart.toLocaleDateString(LOCALE,{month:'long'})} / ${end.toLocaleDateString(LOCALE,{month:'long', year:'numeric'})}`;
-  }
-
-  function rangeTimes(start, end, stepMin) {
-    const out = [];
-    const [sh, sm] = start.split(":").map(Number);
-    const [eh, em] = end.split(":").map(Number);
-    const startM = sh*60+sm, endM = eh*60+em;
-    for (let m = startM; m < endM; m += stepMin) {
-      const h = String(Math.floor(m/60)).padStart(2,"0");
-      const mm = String(m%60).padStart(2,"0");
-      out.push(`${h}:${mm}`);
-    }
-    return out; // bereits streng aufsteigend
-  }
-  function startOfWeek(d){ const x=new Date(d); const w=(x.getDay()+6)%7; x.setDate(x.getDate()-w); x.setHours(0,0,0,0); return x; }
-  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-  function tsFor(date, hm){ const [h,m]=hm.split(':').map(Number); const x=new Date(date); x.setHours(h,m,0,0); return x.getTime(); }
-  function toMin(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
+  function times(start,end,step){const out=[];const[sh,sm]=start.split(":").map(Number);const[eh,em]=end.split(":").map(Number);for(let m=sh*60+sm;m<eh*60+em;m+=step){out.push(`${String(Math.floor(m/60)).padStart(2,"0")}:${String(m%60).padStart(2,"0")}`);}return out;}
+  function startOfWeek(d){const x=new Date(d);const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);x.setHours(0,0,0,0);return x;}
+  function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+  function tsFor(date,hm){const[h,m]=hm.split(":").map(Number);const x=new Date(date);x.setHours(h,m,0,0);return x.getTime();}
+  function toMin(hm){const[h,m]=hm.split(":").map(Number);return h*60+m;}
 
   function renderWeek(){
-    grid.innerHTML = "";
-    const nowTs = Date.now();
-    const base = startOfWeek(new Date());
-    const weekStart = addDays(base, weekOffset*7);
-    monthLabel.textContent = monthText(weekStart);
-    const times = rangeTimes(DAY_START, DAY_END, SLOT_MINUTES); // 08:00..16:30
+    // A) Scroll-Position merken
+    const keepLeft = grid.scrollLeft;
+
+    grid.innerHTML="";
+    const nowTs=Date.now();
+    const base=startOfWeek(new Date());
+    const weekStart=addDays(base,weekOffset*7);
+    monthLabel.textContent=monthText(weekStart);
+    const tlist=times(DAY_START,DAY_END,SLOT_MINUTES);
 
     for(let i=0;i<7;i++){
-      const day = addDays(weekStart,i);
-      const isToday = day.toDateString() === new Date().toDateString();
+      const day=addDays(weekStart,i);
+      const isToday=day.toDateString()===new Date().toDateString();
 
-      const col = document.createElement("div");
-      col.className = "day"+(isToday?" today":"");
-
-      const head = document.createElement("div");
-      head.className = "head";
-      head.innerHTML = `
-        <div class="dnum">${day.toLocaleDateString(LOCALE,{day:'2-digit'})}</div>
-        <div class="dow">${day.toLocaleDateString(LOCALE,{weekday:'short'})}${isToday?' • heute':''}</div>`;
+      const col=document.createElement("div"); col.className="day"+(isToday?" today":"");
+      const head=document.createElement("div"); head.className="head";
+      head.innerHTML=`<div class="dnum">${day.toLocaleDateString(LOCALE,{day:'2-digit'})}</div>
+                      <div class="dow">${day.toLocaleDateString(LOCALE,{weekday:'short'})}${isToday?' • heute':''}</div>`;
       col.appendChild(head);
 
-      const list = document.createElement("div");
-      list.className = "slots";
-      col.appendChild(list);
+      const list=document.createElement("div"); list.className="slots"; col.appendChild(list);
 
-      for(const t of times){
-        const ts = tsFor(day,t);
-        const when = new Date(ts);
-        const inPast = ts < nowTs;
-        const isBooked = booked.has(ts);
+      for(const t of tlist){
+        const ts=tsFor(day,t), when=new Date(ts);
+        const inPast=ts<nowTs, isBooked=booked.has(ts);
+        const btn=document.createElement("button");
+        btn.type="button"; btn.textContent=t; btn.className="slot";
 
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = t;
-        btn.className = "slot";
-        if(inPast || isBooked){ btn.disabled = true; btn.classList.add("unavailable"); }
-        btn.onclick = () => {
-          document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
-          btn.classList.add("selected");
-          selectedTs = ts;
-          msg.innerHTML = `Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE,{weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>`;
-        };
+        // B) Auswahl-Highlight beibehalten
+        if (selectedTs === ts) btn.classList.add("selected");
+
+        if(inPast||isBooked){btn.disabled=true;btn.classList.add("unavailable");}
+        btn.onclick=()=>{document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));btn.classList.add("selected");selectedTs=ts;msg.innerHTML=`Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>`;};
         list.appendChild(btn);
       }
 
       if(isToday) requestAnimationFrame(()=>positionNowLine(list));
       grid.appendChild(col);
     }
+
+    // C) Scroll-Position zurücksetzen
+    grid.scrollLeft = keepLeft;
   }
 
   function positionNowLine(slotsEl){
-    const startM = toMin(DAY_START);
-    const endM   = toMin(DAY_END);
-    const now = new Date();
-    const nowM = now.getHours()*60 + now.getMinutes();
-    if(nowM < startM || nowM > endM){ removeNow(slotsEl); return; }
-
-    const frac = (nowM - startM) / (endM - startM);
-    const y = frac * (slotsEl.scrollHeight - 2);
-
-    let line = slotsEl.querySelector('.now-line');
-    let dot  = slotsEl.querySelector('.now-dot');
-    if(!line){ line=document.createElement('div'); line.className='now-line'; slotsEl.appendChild(line); }
-    if(!dot){  dot=document.createElement('div');  dot.className='now-dot';  slotsEl.appendChild(dot); }
-    line.style.top = `${y}px`;
-    dot.style.top  = `${y}px`;
+    const startM=toMin(DAY_START), endM=toMin(DAY_END);
+    const now=new Date(); const nowM=now.getHours()*60+now.getMinutes();
+    if(nowM<startM||nowM>endM){removeNow(slotsEl);return;}
+    const frac=(nowM-startM)/(endM-startM); const y=frac*(slotsEl.scrollHeight-2);
+    let line=slotsEl.querySelector(".now-line"); let dot=slotsEl.querySelector(".now-dot");
+    if(!line){line=document.createElement("div");line.className="now-line";slotsEl.appendChild(line);}
+    if(!dot){dot=document.createElement("div");dot.className="now-dot";slotsEl.appendChild(dot);}
+    line.style.top=`${y}px`; dot.style.top=`${y}px`;
   }
-  function removeNow(el){ el.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove()); }
-
-  function heartbeat(){ tickClock(); renderWeek(); }
+  function removeNow(el){el.querySelectorAll(".now-line,.now-dot").forEach(n=>n.remove());}
+  function heartbeat(){tickClock();renderWeek();}
 
   form.addEventListener("submit",(e)=>{
-    e.preventDefault();
-    msg.textContent="";
-    const first=form.first.value.trim();
-    const last =form.last.value.trim();
-    const email=form.email.value.trim();
-    if(selectedTs==null){ msg.innerHTML='<span class="err">Bitte Termin wählen.</span>'; return; }
-    if(!first||!last){ msg.innerHTML='<span class="err">Vor- und Nachname angeben.</span>'; return; }
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ msg.innerHTML='<span class="err">E-Mail ungültig.</span>'; return; }
-    booked.add(selectedTs);
-    renderWeek();
-    msg.innerHTML='<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail.</span>';
-    form.reset();
+    e.preventDefault(); msg.textContent="";
+    const first=form.first.value.trim(), last=form.last.value.trim(), email=form.email.value.trim();
+    if(selectedTs==null){msg.innerHTML='<span class="err">Bitte Termin wählen.</span>';return;}
+    if(!first||!last){msg.innerHTML='<span class="err">Vor- und Nachname angeben.</span>';return;}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){msg.innerHTML='<span class="err">E-Mail ungültig.</span>';return;}
+    booked.add(selectedTs); renderWeek(); msg.innerHTML='<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail.</span>'; form.reset();
   });
 
-  tickClock();
-  renderWeek();
-  setInterval(heartbeat, 30000);
-  setInterval(tickClock, 1000);
+  // D) Jetzt-Linie bei Resize aktualisieren
+  window.addEventListener('resize', () => {
+    const todaySlots = document.querySelector('.day.today .slots');
+    if (todaySlots) positionNowLine(todaySlots);
+  });
+
+  tickClock(); renderWeek();
+  setInterval(heartbeat,30000); setInterval(tickClock,1000);
 })();
 </script>
 </body>
