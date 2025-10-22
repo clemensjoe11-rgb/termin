@@ -6,111 +6,104 @@
 <title>Termin buchen</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root { --brand:#2ec4b6; --brand-600:#26a79b; --bg:#0b0c0f; --card:#15181c; --text:#e8edf2; --muted:#9aa3ad; --danger:#ff6b6b; }
+  :root { --brand:#2ec4b6; --brand-600:#26a79b; --bg:#0b0c0f; --card:#15181c; --text:#e8edf2; --muted:#9aa3ad; --danger:#ff5c5c; }
   *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,Segoe UI,Arial}
-  .wrap{max-width:980px;margin:40px auto;padding:0 16px}
-  h1{font-size:28px;margin:0 0 8px} p.lead{color:var(--muted);margin:0 0 24px}
-
-  .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-  .actions{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px}
-  button.primary{background:var(--brand);border:none;color:#0b0c0f;font-weight:600;padding:10px 14px;border-radius:10px;cursor:pointer}
-  button.primary:hover{background:var(--brand-600)}
-  button.ghost{background:transparent;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer}
+  .wrap{max-width:980px;margin:32px auto;padding:0 16px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  h1{font-size:22px;margin:0}
+  .clock{font-variant-numeric:tabular-nums;color:var(--muted)}
+  .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
   .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}
   .day{display:flex;flex-direction:column;gap:10px}
-  .day .head{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .head{display:flex;flex-direction:column;align-items:center;gap:2px}
   .dow{color:var(--muted);font-size:12px}
   .dnum{font-weight:600}
-  .slots{display:flex;flex-direction:column;gap:10px}
-  .slot{border:none;border-radius:14px;padding:10px 0;cursor:pointer;background:var(--brand);color:#0b0c0f;font-weight:600;box-shadow:0 6px 14px rgba(46,196,182,.25)}
+  .today .head .dnum{background:rgba(255,255,255,.1);padding:2px 8px;border-radius:999px}
+  .slots{display:flex;flex-direction:column;gap:10px;position:relative}
+  .slot{border:none;border-radius:14px;padding:10px 0;cursor:pointer;background:var(--brand);color:#0b0c0f;font-weight:600}
   .slot:hover{background:var(--brand-600)}
   .slot.selected{outline:2px solid #fff}
-  .slot.unavailable{background:transparent;border:1px dashed rgba(255,255,255,.2);color:var(--muted);text-decoration:line-through;cursor:not-allowed;box-shadow:none}
-  .empty{color:var(--muted);font-size:13px;text-align:center;padding:14px 0;border:1px dashed rgba(255,255,255,.12);border-radius:12px}
-
-  .form{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .slot.unavailable{background:transparent;border:1px dashed rgba(255,255,255,.2);color:var(--muted);text-decoration:line-through;cursor:not-allowed}
+  .now-line{position:absolute;left:-4px;right:-4px;height:2px;background:var(--danger);box-shadow:0 0 0 2px rgba(255,92,92,.15)}
+  .now-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--danger);left:-6px;transform:translateY(-4px)}
+  .form{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .form .full{grid-column:1/-1}
   label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text)}
   .row-end{display:flex;gap:12px;justify-content:flex-end;margin-top:6px}
+  button.primary{background:var(--brand);border:none;color:#0b0c0f;font-weight:600;padding:10px 14px;border-radius:10px;cursor:pointer}
+  button.primary:hover{background:#26a79b}
+  button.ghost{background:transparent;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer}
   .hint{color:var(--muted);font-size:13px;margin-top:6px}
-  .ok{color:#3ddc97}.err{color:var(--danger)}
+  .ok{color:#3ddc97}.err{color:#ff6b6b}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Kontakt • Termin buchen</h1>
-    <p class="lead">Wählen Sie einen freien Termin und geben Sie Ihre Daten ein.</p>
+<div class="wrap">
+  <header>
+    <h1>Termine</h1>
+    <div class="clock" id="liveClock">—:—</div>
+  </header>
 
-    <div class="card">
-      <div class="actions">
-        <button id="toggle" class="primary">Terminübersicht öffnen</button>
-        <div class="hint">Belegte Zeiten sind durchgestrichen.</div>
+  <div class="card">
+    <div class="grid" id="weekGrid" aria-live="polite"></div>
+
+    <form id="bookForm" class="form" autocomplete="on" novalidate>
+      <div>
+        <label for="first">Vorname</label>
+        <input id="first" name="first" required />
       </div>
-
-      <div id="calendar" style="display:none">
-        <div class="grid" id="weekGrid" aria-live="polite"></div>
-
-        <form id="bookForm" class="form" autocomplete="on" novalidate>
-          <div>
-            <label for="first">Vorname</label>
-            <input id="first" name="first" required />
-          </div>
-          <div>
-            <label for="last">Nachname</label>
-            <input id="last" name="last" required />
-          </div>
-          <div>
-            <label for="email">E-Mail</label>
-            <input id="email" name="email" type="email" required />
-          </div>
-          <div class="full">
-            <div class="row-end">
-              <button type="button" class="ghost" id="nextWeek">Mehr…</button>
-              <button type="submit" class="primary">Termin bestätigen</button>
-            </div>
-            <div id="msg" class="hint"></div>
-          </div>
-        </form>
+      <div>
+        <label for="last">Nachname</label>
+        <input id="last" name="last" required />
       </div>
-    </div>
+      <div>
+        <label for="email">E-Mail</label>
+        <input id="email" name="email" type="email" required />
+      </div>
+      <div class="full">
+        <div class="row-end">
+          <button type="button" class="ghost" id="prevWeek">Zurück</button>
+          <button type="button" class="ghost" id="nextWeek">Mehr…</button>
+          <button type="submit" class="primary">Bestätigen</button>
+        </div>
+        <div id="msg" class="hint"></div>
+      </div>
+    </form>
   </div>
+</div>
 
 <script>
 (() => {
-  // Einstellungen
+  // Konfiguration
   const SLOT_MINUTES = 30;
-  const DAY_START = "14:00";     // earliest
-  const DAY_END   = "18:00";     // latest (exklusiv)
+  const DAY_START = "14:00";
+  const DAY_END   = "18:00";
   const LOCALE = "de-DE";
 
-  // Beispiel: bereits belegte Slots (ISO string "YYYY-MM-DDTHH:mm")
   const booked = new Set([
-    // z.B. "2025-03-12T16:00"
+    // Beispiel: "2025-03-12T16:00"
   ]);
 
   // State
-  let weekOffset = 0; // 0 = aktuelle Woche
+  let weekOffset = 0;
   let selectedIso = null;
 
   // DOM
   const grid = document.getElementById("weekGrid");
-  const cal  = document.getElementById("calendar");
-  const msg  = document.getElementById("msg");
-  const toggle = document.getElementById("toggle");
-  const nextWeek = document.getElementById("nextWeek");
+  const clock = document.getElementById("liveClock");
+  const prevBtn = document.getElementById("prevWeek");
+  const nextBtn = document.getElementById("nextWeek");
   const form = document.getElementById("bookForm");
+  const msg  = document.getElementById("msg");
 
-  toggle.addEventListener("click", () => {
-    const vis = cal.style.display !== "none";
-    cal.style.display = vis ? "none" : "block";
-    toggle.textContent = vis ? "Terminübersicht öffnen" : "Terminübersicht schließen";
-  });
+  prevBtn.onclick = () => { weekOffset -= 1; renderWeek(); };
+  nextBtn.onclick = () => { weekOffset += 1; renderWeek(); };
 
-  nextWeek.addEventListener("click", () => {
-    weekOffset += 1;
-    renderWeek();
-  });
+  function tickClock(){
+    const n = new Date();
+    clock.textContent = n.toLocaleString(LOCALE,{weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+  }
 
   function rangeTimes(start, end, stepMin) {
     const out = [];
@@ -124,52 +117,46 @@
     }
     return out;
   }
-
   function startOfWeek(d) {
     const date = new Date(d);
-    const day = (date.getDay() + 6) % 7; // Montag=0
-    date.setDate(date.getDate() - day);
+    const day = (date.getDay()+6)%7; // Mo=0
+    date.setDate(date.getDate()-day);
     date.setHours(0,0,0,0);
     return date;
   }
-
-  function addDays(d, n) {
-    const x = new Date(d);
-    x.setDate(x.getDate()+n);
-    return x;
-  }
-
+  function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate()+n); return x; }
   function isoFor(date, hm) {
     const [h,m] = hm.split(":").map(Number);
     const x = new Date(date);
     x.setHours(h,m,0,0);
-    // ISO ohne Sekunden
     return x.toISOString().slice(0,16);
   }
 
   function renderWeek() {
     grid.innerHTML = "";
-    selectedIso = null;
-    msg.textContent = "";
-
+    const now = new Date();
     const base = startOfWeek(new Date());
     const weekStart = addDays(base, weekOffset*7);
     const times = rangeTimes(DAY_START, DAY_END, SLOT_MINUTES);
-    const now = new Date();
 
     for (let i=0;i<7;i++) {
       const day = addDays(weekStart, i);
-      const dnum = day.toLocaleDateString(LOCALE,{day:"2-digit"});
-      const dow  = day.toLocaleDateString(LOCALE,{weekday:"short"});
+      const isToday = day.toDateString() === now.toDateString();
 
       const col = document.createElement("div");
-      col.className = "day";
-      col.innerHTML = `<div class="head"><div class="dnum">${dnum}</div><div class="dow">${dow}</div></div>`;
+      col.className = "day"+(isToday?" today":"");
+
+      const head = document.createElement("div");
+      head.className = "head";
+      head.innerHTML = `
+        <div class="dnum">${day.toLocaleDateString(LOCALE,{day:'2-digit'})}</div>
+        <div class="dow">${day.toLocaleDateString(LOCALE,{weekday:'short'})}${isToday?' • heute':''}</div>`;
+      col.appendChild(head);
 
       const list = document.createElement("div");
       list.className = "slots";
+      col.appendChild(list);
 
-      let any = false;
       for (const t of times) {
         const iso = isoFor(day, t);
         const when = new Date(iso);
@@ -180,54 +167,88 @@
         btn.type = "button";
         btn.textContent = t;
         btn.className = "slot";
-        btn.disabled = inPast || isBooked;
-        if (inPast || isBooked) btn.classList.add("unavailable");
-
-        btn.addEventListener("click", () => {
+        if (inPast || isBooked) {
+          btn.disabled = true;
+          btn.classList.add("unavailable");
+        }
+        btn.onclick = () => {
           document.querySelectorAll(".slot.selected").forEach(b=>b.classList.remove("selected"));
           btn.classList.add("selected");
           selectedIso = iso;
-          msg.innerHTML = `Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE, { weekday:"short", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" })}</span>`;
-        });
-
+          msg.innerHTML = `Ausgewählt: <span class="ok">${when.toLocaleString(LOCALE,{weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>`;
+        };
         list.appendChild(btn);
-        any = true;
       }
 
-      if (!any) {
-        const empty = document.createElement("div");
-        empty.className = "empty";
-        empty.textContent = "Keine Zeiten";
-        list.appendChild(empty);
+      // Jetzt-Linie in heutiger Spalte
+      if (isToday) {
+        requestAnimationFrame(() => positionNowLine(list));
       }
 
-      col.appendChild(list);
       grid.appendChild(col);
     }
   }
 
-  form.addEventListener("submit", async (e) => {
+  function positionNowLine(slotsEl){
+    // Grenzen
+    const startM = toMin(DAY_START);
+    const endM   = toMin(DAY_END);
+    const now = new Date();
+    const nowM = now.getHours()*60 + now.getMinutes();
+
+    // Außerhalb des Zeitfensters → keine Linie
+    if (nowM < startM || nowM > endM) {
+      removeNow(slotsEl);
+      return;
+    }
+
+    const rect = slotsEl.getBoundingClientRect();
+    const top  = slotsEl.scrollTop; // not used, layout static
+    const frac = (nowM - startM) / (endM - startM);
+    const y = frac * (slotsEl.scrollHeight - 2); // px
+
+    let line = slotsEl.querySelector('.now-line');
+    let dot  = slotsEl.querySelector('.now-dot');
+    if (!line) {
+      line = document.createElement('div'); line.className='now-line'; slotsEl.appendChild(line);
+      dot  = document.createElement('div');  dot.className='now-dot';  slotsEl.appendChild(dot);
+    }
+    line.style.top = `${y}px`;
+    dot.style.top  = `${y}px`;
+  }
+  function removeNow(el){
+    el.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());
+  }
+  function toMin(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
+
+  // Live-Updates: Uhr + Verfügbarkeit + Jetzt-Linie
+  function heartbeat(){
+    tickClock();
+    // Re-render jede 30s, damit eben vergangene Slots gesperrt werden
+    renderWeek();
+  }
+
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
     msg.textContent = "";
     const first = form.first.value.trim();
     const last  = form.last.value.trim();
     const email = form.email.value.trim();
-    if (!selectedIso)   { msg.innerHTML = '<span class="err">Bitte einen Termin wählen.</span>'; return; }
+    if (!selectedIso){ msg.innerHTML = '<span class="err">Bitte Termin wählen.</span>'; return; }
     if (!first || !last){ msg.innerHTML = '<span class="err">Vor- und Nachname angeben.</span>'; return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.innerHTML = '<span class="err">E-Mail ist ungültig.</span>'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ msg.innerHTML = '<span class="err">E-Mail ungültig.</span>'; return; }
 
-    // Hier würdest du an deinen Server posten:
-    // await fetch('/api/book', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({first,last,email,slot:selectedIso})})
-
-    // Demo: lokal „blockieren“
     booked.add(selectedIso);
     renderWeek();
-    msg.innerHTML = '<span class="ok">Termin vorgemerkt. Bestätigung wird per E-Mail gesendet.</span>';
+    msg.innerHTML = '<span class="ok">Vorgemerkt. Bestätigung folgt per E-Mail.</span>';
     form.reset();
   });
 
   // Init
+  tickClock();
   renderWeek();
+  setInterval(heartbeat, 30000);
+  setInterval(tickClock, 1000);
 })();
 </script>
 </body>
