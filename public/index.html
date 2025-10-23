@@ -11,6 +11,8 @@
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,Segoe UI,Arial;display:grid;place-items:start center;min-height:100svh}
 .wrap{width:min(1100px,100%);padding:24px}
+
+/* Header */
 .header{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;margin-bottom:12px}
 .nav-core{place-self:center;display:flex;align-items:center;gap:12px}
 .btn{border-radius:12px;padding:8px 12px;cursor:pointer;font-weight:600;border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--text)}
@@ -19,10 +21,16 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-
 .btn.primary:hover{background:var(--brand-600)}
 .datepick{appearance:none;background:#0f1215;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:8px 10px;border-radius:10px;font:inherit}
 .controls{justify-self:end}
+
+/* Shell */
 .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
 .clock{color:var(--muted);text-align:center;margin-bottom:12px;font-variant-numeric:tabular-nums}
+
+/* Collapsible */
 .collapsible{overflow:hidden;max-height:0;transition:max-height .35s ease}
 .collapsible.open{max-height:2000px}
+
+/* Kalender */
 .grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}
 .day{display:flex;flex-direction:column;gap:10px;min-width:140px}
 .head{display:grid;align-content:center;justify-items:center;gap:4px;height:64px;text-align:center}
@@ -36,19 +44,34 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-
 .slot.unavailable{background:transparent;border-color:rgba(255,255,255,.2);color:var(--muted);text-decoration:line-through;cursor:not-allowed}
 .now-line{position:absolute;left:0;right:0;height:2px;background:var(--danger);box-shadow:0 0 0 2px rgba(255,92,92,.15)}
 .now-dot{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--danger);left:-6px;transform:translateY(-4px)}
+
+/* Formular */
 .form-block{display:none;margin-top:16px}
 .form-block.show{display:block}
+
+/* 2-spaltig */
 .form{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));column-gap:16px;row-gap:14px}
 .form .full{grid-column:1/-1}
 label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
 input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:#0f1215;color:var(--text)}
 .inline{display:grid;grid-template-columns:140px 1fr;gap:10px}
+
+/* Bedingungen */
 .terms{display:grid;gap:10px}
 .terms .summary{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}
 .terms .accept{margin:0;display:flex;align-items:center;justify-content:flex-end;gap:10px;font-weight:600}
 .terms .accept input{inline-size:18px;block-size:18px;margin:0}
+.terms .accept.invalid{outline:2px solid var(--danger);border-radius:10px;padding:8px}
+
+/* Shake-Animation bei Fehler */
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.shake{animation:shake .35s ease}
+
+/* Hinweise */
 .hint{color:var(--muted);font-size:13px;margin-top:6px}
-.ok{color:#3ddc97}.err{color:#ff6b6b}
+.ok{color:#3ddc97}.err{color:#ff5c5c}
+
+/* Mobile */
 .mobile{display:none}
 @media (max-width:720px){
   .grid{display:none}
@@ -64,7 +87,15 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rg
 }
 @media (max-width:900px){.slot{height:42px;font-size:14px}.slots{gap:8px;grid-auto-rows:42px}}
 @media (max-width:480px){.datepick{padding:6px 8px}.inline{grid-template-columns:110px 1fr}}
-.calendar-hidden .nav-core,.calendar-hidden #clock,.calendar-hidden #calWrap,.calendar-hidden .mobile,.calendar-hidden .form-block{display:none!important}
+
+/* Alles ausblenden wenn versteckt */
+.calendar-hidden .nav-core,
+.calendar-hidden #clock,
+.calendar-hidden #calWrap,
+.calendar-hidden .mobile,
+.calendar-hidden .form-block{display:none!important}
+
+/* Floating Confirm: volle Breite unten */
 .confirm-bar{position:fixed;left:0;right:0;bottom:0;z-index:50;display:none;background:rgba(21,24,28,.92);border-top:1px solid rgba(255,255,255,.08);backdrop-filter:blur(6px);padding:12px 16px}
 .confirm-bar.show{display:block}
 .confirm-bar .btn{width:100%;height:48px;font-weight:700;border-radius:12px}
@@ -136,33 +167,39 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid rg
             <input id="phone" name="phone" type="tel" inputmode="tel" placeholder="628 123 456" required>
           </div>
         </div>
+
+        <!-- Bedingungen -->
         <div class="full terms">
           <p class="summary">
             Kurzfassung: Der Termin kann vom Anbieter aus organisatorischen Gründen
             verschoben oder storniert werden. Sie werden per E-Mail oder SMS informiert.
             Mit dem Absenden stimmen Sie der Kontaktaufnahme zu.
           </p>
-          <label class="accept">
+          <label class="accept" id="termsWrap">
             Ich akzeptiere die Bedingungen.
             <input id="terms" type="checkbox" required>
           </label>
         </div>
+
         <div id="msg" class="full hint" role="status" aria-live="polite"></div>
       </form>
     </div>
   </div>
 </div>
 
+<!-- Floating Confirm -->
 <div id="confirmBar" class="confirm-bar">
   <button id="confirmBtn" class="btn primary" type="button">Weiter</button>
 </div>
 
 <script>
 (()=>{
+// Konfiguration
 const SLOT_MIN=30, START="08:00", END="17:00", LOCALE="de-DE";
 let weekOffset=0, selectedTs=null, mobileDayTs=null;
 const booked=new Set();
 
+// DOM
 const grid=document.getElementById("grid");
 const mStrip=document.getElementById("dateStrip");
 const mSlots=document.getElementById("mSlots");
@@ -177,21 +214,27 @@ const jumpDate=document.getElementById("jumpDate");
 const formBlock=document.getElementById("formBlock");
 const confirmBar=document.getElementById("confirmBar");
 const confirmBtn=document.getElementById("confirmBtn");
+const terms=document.getElementById("terms");
+const termsWrap=document.getElementById("termsWrap");
 
+// Utils
 const toMin=s=>{const[a,b]=s.split(':').map(Number);return a*60+b;}
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;}
 const startOfWeek=d=>{const x=new Date(d);const w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);x.setHours(0,0,0,0);return x;}
 const times=(a,b,step)=>{const out=[];for(let m=toMin(a);m<toMin(b);m+=step){out.push(`${String(m/60|0).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`)}return out;}
 const tsFor=(date,hm)=>{const[h,m]=hm.split(':').map(Number);const x=new Date(date);x.setHours(h,m,0,0);return x.getTime()}
 
+// Controls
 prev.onclick =()=>{weekOffset--; renderAll()}
 next.onclick =()=>{weekOffset++; renderAll()}
 toggle.onclick=()=>{const hide=document.body.classList.toggle('calendar-hidden');toggle.setAttribute('aria-expanded',String(!hide));calWrap.classList.toggle('open',!hide);if(hide){confirmBar.classList.remove('show');}}
 jumpDate.value=new Date().toISOString().slice(0,10);
 jumpDate.onchange=()=>{if(!jumpDate.value) return;const base=startOfWeek(new Date());const target=startOfWeek(new Date(jumpDate.value));const diffDays=Math.round((target-base)/86400000);weekOffset=Math.trunc(diffDays/7);mobileDayTs=target.getTime();renderAll();}
 
+// Clock
 function tick(){clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
 
+// Desktop
 function renderDesktop(){
   grid.innerHTML='';
   const now=Date.now(), base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
@@ -216,6 +259,7 @@ function renderDesktop(){
   }
 }
 
+// Mobile
 function renderMobile(){
   mStrip.innerHTML=''; mSlots.innerHTML='';
   const base=startOfWeek(new Date()), weekStart=addDays(base,weekOffset*7);
@@ -245,6 +289,7 @@ function renderMobileSlots(day,tlist,now){
   else mSlots.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());
 }
 
+// Helpers
 function positionNowLine(container){
   const s=toMin(START), e=toMin(END), now=new Date(), m=now.getHours()*60+now.getMinutes();
   if(m<s||m>e){container.querySelectorAll('.now-line,.now-dot').forEach(n=>n.remove());return;}
@@ -265,6 +310,15 @@ function selectSlot(ts,btn){
   confirmBar.classList.add('show');
 }
 
+// Checkbox Fehlerzustand entfernen, wenn angeklickt
+terms.addEventListener('change', ()=>{
+  if(terms.checked){
+    termsWrap.classList.remove('invalid','shake');
+    msg.textContent='';
+  }
+});
+
+// Confirm-Bar Logik
 confirmBtn.onclick = () => {
   if(confirmBtn.dataset.state === 'preview'){
     formBlock.classList.add('show');
@@ -272,6 +326,14 @@ confirmBtn.onclick = () => {
     confirmBtn.dataset.state='submit';
     formBlock.scrollIntoView({behavior:'smooth',block:'start'});
   }else{
+    // Vor dem Absenden: Checkbox prüfen und ggf. markieren
+    if(!terms.checked){
+      termsWrap.classList.add('invalid','shake');
+      setTimeout(()=>termsWrap.classList.remove('shake'),400);
+      msg.innerHTML='<span class="err">Bitte Bedingungen akzeptieren.</span>';
+      terms.focus();
+      return;
+    }
     form.requestSubmit();
   }
 };
@@ -280,6 +342,7 @@ function isMobile(){return matchMedia('(max-width: 720px)').matches}
 function renderAll(){tick();if(isMobile()) renderMobile(); else renderDesktop();}
 function tick(){clock.textContent=new Date().toLocaleString(LOCALE,{weekday:'short',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
 
+// Formular-Submit inkl. DB-Fehlertext
 form.addEventListener('submit', async (e)=>{
   e.preventDefault(); msg.textContent='';
   if(selectedTs==null){msg.innerHTML='<span class="err">Bitte erst einen Termin wählen.</span>';return;}
@@ -299,17 +362,49 @@ form.addEventListener('submit', async (e)=>{
   if(!payload.birthDate){msg.innerHTML='<span class="err">Geburtsdatum angeben.</span>';return;}
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)){msg.innerHTML='<span class="err">E-Mail ungültig.</span>';return;}
   if(!/\d{3,}/.test(payload.phone)){msg.innerHTML='<span class="err">Mobilnummer prüfen.</span>';return;}
-  if(!f.terms.checked){msg.innerHTML='<span class="err">Bitte Bedingungen akzeptieren.</span>';return;}
+  if(!terms.checked){
+    termsWrap.classList.add('invalid','shake');
+    setTimeout(()=>termsWrap.classList.remove('shake'),400);
+    msg.innerHTML='<span class="err">Bitte Bedingungen akzeptieren.</span>';
+    terms.focus();
+    return;
+  }
 
   try {
-    const r = await fetch('/api/book', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-    const js = await r.json();
-    if(!r.ok || !js.ok){throw new Error(js.error || 'Fehler')}
-    msg.innerHTML='<span class="ok">Termin bestätigt. Bestätigung folgt per E‑Mail/SMS.</span>';
+    const r = await fetch('/api/book', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    // Netzwerk-/Server-/DB-Probleme sauber melden
+    if(!r.ok){
+      // 5xx → technische Störung
+      if(r.status>=500){
+        throw new Error('Technische Störung. Bitte später erneut versuchen.');
+      }
+    }
+    let js;
+    try { js = await r.json(); } catch { js = {}; }
+    if(!js.ok){
+      // Backend kann z.B. { ok:false, errorCode:'DB_CONNECT' } senden
+      if(js.errorCode === 'DB_CONNECT'){
+        throw new Error('Technische Störung. Bitte später erneut versuchen.');
+      }
+      throw new Error(js.error || 'Fehler beim Buchen.');
+    }
+
+    msg.innerHTML='<span class="ok">Termin bestätigt. Bestätigung folgt per E-Mail/SMS.</span>';
     f.reset();
     confirmBar.classList.remove('show');
+    termsWrap.classList.remove('invalid');
   } catch(err){
-    msg.innerHTML='<span class="err">'+err.message+'</span>';
+    // Fetch-Fehler/Offline
+    if(err instanceof TypeError){
+      msg.innerHTML='<span class="err">Technische Störung. Bitte später erneut versuchen.</span>';
+    }else{
+      msg.innerHTML='<span class="err">'+(err.message||'Technische Störung. Bitte später erneut versuchen.')+'</span>';
+    }
   }
 });
 
