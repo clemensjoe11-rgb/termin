@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: termin
+    env: node
+    plan: free
+    buildCommand: "npm ci"
+    startCommand: "npm start"
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGODB_URI
+        sync: false   # in Render Dashboard setzen
+      - key: DB_NAME
+        value: termin
