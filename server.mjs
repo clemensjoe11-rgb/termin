@@ -1,121 +1,126 @@
-import express from 'express';
-import morgan from 'morgan';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { MongoClient } from 'mongodb';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import express from "express";
+import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(morgan('tiny'));
-app.use(express.static(path.join(__dirname, 'public')));
+const PORT = process.env.PORT || 3000;
 
-const uri = process.env.MONGO_URI;
+// --- Mongo ---
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  "mongodb+srv://gomdi:<db_password>@termin.w61ykad.mongodb.net/?retryWrites=true&w=majority&appName=termin";
+const DB_NAME = process.env.DB_NAME || "termin";
+const COL = "appointments";
+
 let client, col;
 
-async function connectMongo() {
-  if (col) return col;
-  if (!uri) {
-    console.warn('MONGO_URI not set. Running without DB.');
-    return null;
-  }
-  client = new MongoClient(uri);
+async function initDb() {
+  client = new MongoClient(MONGODB_URI);
   await client.connect();
-  const db = client.db('termin');
-  col = db.collection('bookings');
-  await col.createIndex({ startISO: 1 }, { unique: true }).catch(()=>{});
-  return col;
+  const db = client.db(DB_NAME);
+  col = db.collection(COL);
+  // eindeutiger Slot
+  await col.createIndex({ startISO: 1 }, { unique: true });
+  // häufigste Abfragen
+  await col.createIndex({ startISO: 1, endISO: 1 });
 }
-
-// Helpers
-function buildSlots(startHour=8, endHour=17, stepMin=30, days=7) {
-  const out = [];
-  const now = new Date();
-  const base = new Date(now); base.setHours(0,0,0,0);
-  for (let d=0; d<days; d++) {
-    const day0 = new Date(base.getTime()+d*86400000);
-    for (let h=startHour; h<endHour; h++) {
-      for (let m=0; m<60; m+=stepMin) {
-        const s = new Date(day0); s.setHours(h,m,0,0);
-        const e = new Date(s.getTime()+stepMin*60000);
-        out.push({
-          id: s.toISOString(),
-          startISO: s.toISOString(),
-          endISO: e.toISOString(),
-        });
-      }
-    }
-  }
-  return out;
-}
-
-// GET slots
-app.get('/api/slots', async (req,res) => {
-  const slots = buildSlots();
-  let taken = new Set();
-  const collection = await connectMongo();
-  if (collection) {
-    const minISO = new Date().toISOString();
-    const docs = await collection.find({ startISO: { $gte: minISO }}, { projection: { startISO:1, _id:0 }}).toArray();
-    taken = new Set(docs.map(d=>d.startISO));
-  }
-  const now = Date.now();
-  res.json({ ok:true, data: slots.map(s => ({
-    ...s,
-    taken: taken.has(s.startISO),
-    past: new Date(s.endISO).getTime() <= now
-  }))});
+initDb().catch((e) => {
+  console.error("DB init failed:", e.message);
 });
 
-// POST booking
-app.post('/api/book', async (req,res) => {
-  const {
-    slotId, firstName, lastName, email, gender, phone, countryCode, birthDate
-  } = req.body || {};
+app.use(express.json());
+app.use(express.static("public"));
 
-  if (!slotId || !email || !firstName || !lastName) {
-    return res.status(400).json({ ok:false, error:'Missing required fields.' });
-  }
-  const start = new Date(slotId);
-  if (Number.isNaN(start.getTime())) {
-    return res.status(400).json({ ok:false, error:'Invalid slotId.' });
-  }
-  const end = new Date(start.getTime()+30*60000);
+// Health
+app.get("/api/health", (_req, res) => {
+  const ok = !!col;
+  res.status(ok ? 200 : 503).json({ ok });
+});
 
-  const doc = {
-    startISO: start.toISOString(),
-    endISO: end.toISOString(),
-    firstName, lastName, email, gender: gender||null,
-    phone: phone||null, countryCode: countryCode||null,
-    birthDate: birthDate||null,
-    createdAt: new Date().toISOString()
-  };
-
-  const collection = await connectMongo();
-  if (!collection) {
-    return res.json({ ok:true, note:'DB not configured. Skipped persist.', data: doc });
-  }
+// Slots für UI: gibt nur belegte Startzeiten zurück (leichtgewichtig)
+app.get("/api/slots", async (req, res) => {
   try {
-    await collection.insertOne(doc);
-    res.json({ ok:true, data: doc });
-  } catch (e) {
-    if (e.code === 11000) {
-      return res.status(409).json({ ok:false, error:'Slot already booked.' });
+    if (!col) throw new Error("no-db");
+    // optional: Zeitraum filtern
+    const from = req.query.from ? new Date(req.query.from) : null;
+    const to = req.query.to ? new Date(req.query.to) : null;
+
+    const q = {};
+    if (from || to) {
+      q.startISO = {};
+      if (from) q.startISO.$gte = from.toISOString();
+      if (to) q.startISO.$lt = to.toISOString();
     }
-    console.error(e);
-    res.status(500).json({ ok:false, error:'DB error' });
+
+    const taken = await col
+      .find(q, { projection: { _id: 0, startISO: 1, endISO: 1 } })
+      .toArray();
+
+    res.json({
+      ok: true,
+      data: taken.map((t) => ({ startISO: t.startISO, endISO: t.endISO, taken: true }))
+    });
+  } catch (e) {
+    res.status(503).json({ ok: false, error: "Technische Störung: DB nicht erreichbar." });
   }
 });
 
-// Fallback to index
-app.get('*', (_,res)=> res.sendFile(path.join(__dirname,'public','index.html')));
+// Buchen
+app.post("/api/book", async (req, res) => {
+  try {
+    if (!col) throw new Error("no-db");
 
-const port = process.env.PORT || 3000;
-app.listen(port, ()=> console.log('Server listening on http://localhost:'+port));
+    const {
+      firstName,
+      lastName,
+      email,
+      gender,
+      countryCode,
+      phone,
+      birthDate,
+      slotId // ISO-String
+    } = req.body || {};
+
+    // Minimal-Validierung
+    if (!slotId || !firstName || !lastName || !email || !birthDate || !gender) {
+      return res.status(400).json({ ok: false, error: "Eingaben unvollständig." });
+    }
+
+    const start = new Date(slotId);
+    if (isNaN(start.getTime())) {
+      return res.status(400).json({ ok: false, error: "Ungültiger Slot." });
+    }
+    const end = new Date(start.getTime() + 30 * 60000); // 30min Slot
+
+    const doc = {
+      startISO: start.toISOString(),
+      endISO: end.toISOString(),
+      firstName,
+      lastName,
+      email,
+      gender,
+      countryCode,
+      phone,
+      birthDate,
+      createdAt: new Date().toISOString()
+    };
+
+    await col.insertOne(doc); // unique Index verhindert Doppeltbuchung
+
+    res.json({ ok: true });
+  } catch (e) {
+    if (e?.code === 11000) {
+      // unique collision
+      return res.status(409).json({ ok: false, error: "Dieser Termin wurde gerade vergeben." });
+    }
+    res
+      .status(503)
+      .json({ ok: false, error: "Technische Störung: Verbindung zur Datenbank fehlgeschlagen." });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server on http://localhost:${PORT}`);
+});
