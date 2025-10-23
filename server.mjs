@@ -1,126 +1,89 @@
 import express from "express";
 import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-dotenv.config();
-
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.use(express.json());
 
-// --- Mongo ---
-const MONGODB_URI =
-  process.env.MONGODB_URI ||
-  "mongodb+srv://gomdi:<db_password>@termin.w61ykad.mongodb.net/?retryWrites=true&w=majority&appName=termin";
+// --- ENV
+const PORT = process.env.PORT || 10000;
+const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || "termin";
-const COL = "appointments";
+const COLLECTION = process.env.COLLECTION || "appointments";
 
+// --- Mongo
 let client, col;
-
-async function initDb() {
-  client = new MongoClient(MONGODB_URI);
+async function initMongo() {
+  if (!MONGODB_URI) throw new Error("MONGODB_URI fehlt");
+  client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
   await client.connect();
   const db = client.db(DB_NAME);
-  col = db.collection(COL);
+  col = db.collection(COLLECTION);
   // eindeutiger Slot
   await col.createIndex({ startISO: 1 }, { unique: true });
-  // häufigste Abfragen
-  await col.createIndex({ startISO: 1, endISO: 1 });
 }
-initDb().catch((e) => {
-  console.error("DB init failed:", e.message);
+initMongo().catch(err => {
+  console.error("Mongo init failed:", err.message);
 });
 
-app.use(express.json());
-app.use(express.static("public"));
-
-// Health
-app.get("/api/health", (_req, res) => {
-  const ok = !!col;
-  res.status(ok ? 200 : 503).json({ ok });
+// --- API
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, mongo: !!col });
 });
 
-// Slots für UI: gibt nur belegte Startzeiten zurück (leichtgewichtig)
 app.get("/api/slots", async (req, res) => {
   try {
-    if (!col) throw new Error("no-db");
-    // optional: Zeitraum filtern
-    const from = req.query.from ? new Date(req.query.from) : null;
-    const to = req.query.to ? new Date(req.query.to) : null;
-
-    const q = {};
-    if (from || to) {
-      q.startISO = {};
-      if (from) q.startISO.$gte = from.toISOString();
-      if (to) q.startISO.$lt = to.toISOString();
-    }
-
-    const taken = await col
-      .find(q, { projection: { _id: 0, startISO: 1, endISO: 1 } })
+    if (!col) throw new Error("db down");
+    // Nur gebuchte Slots zurückgeben
+    const rows = await col
+      .find({}, { projection: { _id: 0, startISO: 1, endISO: 1, taken: 1 } })
       .toArray();
-
-    res.json({
-      ok: true,
-      data: taken.map((t) => ({ startISO: t.startISO, endISO: t.endISO, taken: true }))
-    });
+    res.json({ ok: true, data: rows });
   } catch (e) {
-    res.status(503).json({ ok: false, error: "Technische Störung: DB nicht erreichbar." });
+    res.status(503).json({ ok: false, error: "DB nicht erreichbar" });
   }
 });
 
-// Buchen
 app.post("/api/book", async (req, res) => {
   try {
-    if (!col) throw new Error("no-db");
-
+    if (!col) throw new Error("db down");
     const {
-      firstName,
-      lastName,
-      email,
-      gender,
-      countryCode,
-      phone,
-      birthDate,
-      slotId // ISO-String
+      firstName, lastName, email, gender, phone, countryCode,
+      birthDate, startISO, endISO
     } = req.body || {};
 
-    // Minimal-Validierung
-    if (!slotId || !firstName || !lastName || !email || !birthDate || !gender) {
-      return res.status(400).json({ ok: false, error: "Eingaben unvollständig." });
+    // Minimalvalidierung
+    if (!firstName || !lastName || !email || !startISO || !endISO) {
+      return res.status(400).json({ ok: false, error: "Ungültige Daten" });
     }
-
-    const start = new Date(slotId);
-    if (isNaN(start.getTime())) {
-      return res.status(400).json({ ok: false, error: "Ungültiger Slot." });
-    }
-    const end = new Date(start.getTime() + 30 * 60000); // 30min Slot
 
     const doc = {
-      startISO: start.toISOString(),
-      endISO: end.toISOString(),
-      firstName,
-      lastName,
-      email,
-      gender,
-      countryCode,
-      phone,
-      birthDate,
-      createdAt: new Date().toISOString()
+      firstName, lastName, email, gender, phone, countryCode, birthDate,
+      startISO, endISO, taken: true, createdAt: new Date()
     };
 
-    await col.insertOne(doc); // unique Index verhindert Doppeltbuchung
+    await col.updateOne(
+      { startISO },
+      { $setOnInsert: doc },
+      { upsert: true }
+    );
 
     res.json({ ok: true });
   } catch (e) {
-    if (e?.code === 11000) {
-      // unique collision
-      return res.status(409).json({ ok: false, error: "Dieser Termin wurde gerade vergeben." });
+    if (String(e?.message || "").includes("E11000")) {
+      return res.status(409).json({ ok: false, error: "Slot bereits belegt" });
     }
-    res
-      .status(503)
-      .json({ ok: false, error: "Technische Störung: Verbindung zur Datenbank fehlgeschlagen." });
+    console.error("POST /api/book", e.message);
+    res.status(503).json({ ok: false, error: "Technische Störung" });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server on http://localhost:${PORT}`);
-});
+// --- statische Dateien (Frontend)
+app.use(express.static(path.join(__dirname, "public")));
+app.get("*", (_req, res) =>
+  res.sendFile(path.join(__dirname, "public", "index.html"))
+);
+
+app.listen(PORT, () => console.log("Server running on", PORT));
