@@ -13,14 +13,25 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-
 .wrap{width:min(1100px,100%);padding:24px}
 
 /* Header */
-.header{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;margin-bottom:12px}
-.nav-core{place-self:center;display:flex;align-items:center;gap:12px}
+.header{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;   /* Mitte = Navigation */
+  align-items:center; gap:12px; margin-bottom:12px;
+}
+.nav-core{
+  grid-column:2;                         /* in die Mitte */
+  justify-self:center;
+  display:flex; align-items:center; gap:12px;
+}
+.controls{
+  grid-column:3;                         /* rechts */
+  justify-self:end;
+}
 .btn{border-radius:12px;padding:8px 12px;cursor:pointer;font-weight:600;border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--text)}
 .btn.icon{width:40px;height:40px;display:grid;place-items:center;font-size:18px;border-radius:10px}
 .btn.primary{background:var(--brand);border:none;color:#0b0c0f}
 .btn.primary:hover{background:var(--brand-600)}
 .datepick{appearance:none;background:#0f1215;border:1px solid rgba(255,255,255,.18);color:var(--text);padding:8px 10px;border-radius:10px;font:inherit}
-.controls{justify-self:end}
 
 /* Shell */
 .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px}
