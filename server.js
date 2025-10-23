@@ -1,89 +1,83 @@
-import express from "express";
-import { MongoClient } from "mongodb";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import { MongoClient } from 'mongodb';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+app.use(cors());
 app.use(express.json());
+app.use(morgan('tiny'));
 
-// --- ENV
-const PORT = process.env.PORT || 10000;
-const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME = process.env.DB_NAME || "termin";
-const COLLECTION = process.env.COLLECTION || "appointments";
+// Mongo
+const uri = process.env.MONGODB_URI;
+const dbName = process.env.DB_NAME || 'termin';
+const colName = process.env.COLLECTION || 'bookings';
 
-// --- Mongo
 let client, col;
-async function initMongo() {
-  if (!MONGODB_URI) throw new Error("MONGODB_URI fehlt");
-  client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+
+async function connectDB() {
+  client = new MongoClient(uri);
   await client.connect();
-  const db = client.db(DB_NAME);
-  col = db.collection(COLLECTION);
-  // eindeutiger Slot
-  await col.createIndex({ startISO: 1 }, { unique: true });
+  col = client.db(dbName).collection(colName);
 }
-initMongo().catch(err => {
-  console.error("Mongo init failed:", err.message);
+connectDB().catch(err => {
+  console.error('DB connect failed:', err.message);
 });
 
-// --- API
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, mongo: !!col });
+// API
+app.get('/api/health', (_req, res) => {
+  const ok = !!col;
+  res.status(ok ? 200 : 503).json({ ok, db: ok ? 'connected' : 'down' });
 });
 
-app.get("/api/slots", async (req, res) => {
+app.get('/api/slots', async (_req, res) => {
   try {
-    if (!col) throw new Error("db down");
-    // Nur gebuchte Slots zurückgeben
-    const rows = await col
-      .find({}, { projection: { _id: 0, startISO: 1, endISO: 1, taken: 1 } })
+    if (!col) return res.status(503).json({ ok: false, error: 'db_down' });
+    const docs = await col
+      .find({ taken: true }, { projection: { _id: 0, startISO: 1, endISO: 1, taken: 1 } })
       .toArray();
-    res.json({ ok: true, data: rows });
+    res.json({ ok: true, data: docs });
   } catch (e) {
-    res.status(503).json({ ok: false, error: "DB nicht erreichbar" });
+    res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
 
-app.post("/api/book", async (req, res) => {
+app.post('/api/book', async (req, res) => {
   try {
-    if (!col) throw new Error("db down");
+    if (!col) return res.status(503).json({ ok: false, error: 'db_down' });
+
     const {
       firstName, lastName, email, gender, phone, countryCode,
-      birthDate, startISO, endISO
+      birthDate, startISO, endISO, taken
     } = req.body || {};
 
-    // Minimalvalidierung
-    if (!firstName || !lastName || !email || !startISO || !endISO) {
-      return res.status(400).json({ ok: false, error: "Ungültige Daten" });
-    }
+    if (!firstName || !lastName || !email || !birthDate || !startISO)
+      return res.status(400).json({ ok: false, error: 'missing_fields' });
 
-    const doc = {
-      firstName, lastName, email, gender, phone, countryCode, birthDate,
-      startISO, endISO, taken: true, createdAt: new Date()
-    };
+    // doppelte Buchung vermeiden
+    const exists = await col.findOne({ startISO });
+    if (exists) return res.status(409).json({ ok: false, error: 'already_booked' });
 
-    await col.updateOne(
-      { startISO },
-      { $setOnInsert: doc },
-      { upsert: true }
-    );
-
+    await col.insertOne({
+      firstName, lastName, email, gender, phone, countryCode,
+      birthDate, startISO, endISO, taken: !!taken, createdAt: new Date()
+    });
     res.json({ ok: true });
   } catch (e) {
-    if (String(e?.message || "").includes("E11000")) {
-      return res.status(409).json({ ok: false, error: "Slot bereits belegt" });
-    }
-    console.error("POST /api/book", e.message);
-    res.status(503).json({ ok: false, error: "Technische Störung" });
+    res.status(500).json({ ok: false, error: 'server_error' });
   }
 });
 
-// --- statische Dateien (Frontend)
-app.use(express.static(path.join(__dirname, "public")));
-app.get("*", (_req, res) =>
-  res.sendFile(path.join(__dirname, "public", "index.html"))
+// Static Frontend
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('*', (_req, res) =>
+  res.sendFile(path.join(__dirname, 'public', 'index.html'))
 );
 
-app.listen(PORT, () => console.log("Server running on", PORT));
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log('listening on', port));
